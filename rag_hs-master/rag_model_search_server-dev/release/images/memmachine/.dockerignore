@@ -1,0 +1,152 @@
+# =============================================================================
+# 构建上下文排除规则（仅作规则备查，本文件不被 Docker 读取）
+#
+# 现状：docker-compose.yml 的 build context 已改为项目根（context: ../../..），
+# Docker 只读取 context 根目录（项目根）下的 .dockerignore。本文件留在子目录
+# release/images/memmachine/ 中，不会被 Docker 读取，仅作为排除规则备查，
+# 供在项目根维护 .dockerignore 时参考。
+# 源码路径以项目根为基准（如 open_source/memmachine/）。
+#
+# 目标：减小构建上下文体积、避免敏感文件进镜像、加速重复构建
+# =============================================================================
+
+# ── Git 与版本控制 ───────────────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+
+# ── 本部署目录中不进镜像的文件 ──────────────────────────────────────
+# # configuration.yml 通过 volume 挂载，不需要 COPY 进镜像
+# configuration.yml
+# # .env / .env.example 含敏感配置，不进镜像
+# .env
+# .env.*
+# .env.example
+# 部署脚本本身不需要进镜像
+deploy.sh
+stop.sh
+# docker-compose.yml 不进镜像
+docker-compose.yml
+docker-compose*.yml
+# 本 .dockerignore 不进镜像
+.dockerignore
+# 文档不进镜像
+*.md
+MemMachine.md
+
+# ── open_source/memmachine 源码中不需要进构建的 ──────────────────────
+# # 文档站源（Mintlify），体积大且不需要
+# open_source/memmachine/docs/
+# # 示例与集成 demo
+# open_source/memmachine/examples/
+# open_source/memmachine/integrations/
+# # 评估脚本与数据集
+# open_source/memmachine/evaluation/
+# # 维护者文档
+# open_source/memmachine/maintainers/
+# # MemMachine 自带的部署文件（与本部署的重复，且不使用）
+# open_source/memmachine/docker-compose.yml
+# open_source/memmachine/docker-compose*.yml
+# open_source/memmachine/Dockerfile
+# open_source/memmachine/Dockerfile.*
+# open_source/memmachine/.dockerignore
+# open_source/memmachine/build-docker.sh
+# open_source/memmachine/memmachine-compose.sh
+# open_source/memmachine/configuration.yml
+# open_source/memmachine/sample_configs/
+# # TypeScript 客户端源（镜像只构建 server 包）
+# open_source/memmachine/packages/ts-client/
+# open_source/memmachine/packages/meta/
+
+# ── 文档与许可证（体积大，运行时不需要）────────────────────────────
+open_source/memmachine/*.md
+open_source/memmachine/LICENSE
+open_source/memmachine/USAGE.md
+open_source/memmachine/USAGE-CN.md
+open_source/memmachine/AGENTS.md
+open_source/memmachine/AGENTS-CN.md
+open_source/memmachine/CLAUDE.md
+open_source/memmachine/CLAUDE-CN.md
+open_source/memmachine/CONTRIBUTING.md
+open_source/memmachine/CONTRIBUTING-CN.md
+open_source/memmachine/CONTRIBUTING-CORE.md
+open_source/memmachine/CONTRIBUTING-DOCS.md
+open_source/memmachine/CODE_OF_CONDUCT.md
+open_source/memmachine/CODE_OF_CONDUCT-CN.md
+open_source/memmachine/GOVERNANCE.md
+open_source/memmachine/GOVERNANCE-CN.md
+open_source/memmachine/SECURITY.md
+open_source/memmachine/SECURITY-CN.md
+open_source/memmachine/STYLE_GUIDE.md
+open_source/memmachine/STYLE_GUIDE-CN.md
+open_source/memmachine/DOCKER_COMPOSE_README.md
+open_source/memmachine/DOCKER_COMPOSE_README-CN.md
+open_source/memmachine/README.md
+open_source/memmachine/README-CN.md
+
+# ── Python 缓存与构建产物 ────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+*.egg
+MANIFEST
+venv*/
+.venv/
+env/
+ENV/
+
+# ── 测试与覆盖率 ─────────────────────────────────────────────────────
+# 排除各包的测试目录（server_tests / client_tests / common_tests）
+# open_source/memmachine/packages/server/server_tests/
+# open_source/memmachine/packages/client/client_tests/
+# open_source/memmachine/packages/common/common_tests/
+# test_*.py
+# *_test.py
+# .pytest_cache/
+# .coverage
+# htmlcov/
+# .tox/
+# .nox/
+# .coverage.*
+# coverage.xml
+
+# ── IDE 与编辑器文件 ────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── 日志与临时文件 ──────────────────────────────────────────────────
+*.log
+logs/
+tmp/
+temp/
+.tmp/
+
+# ── 数据库文件 ───────────────────────────────────────────────────────
+# *.db
+# *.sqlite
+# *.sqlite3
+
+# ── 其他构建产物 ─────────────────────────────────────────────────────
+*.tar.gz
+*.zip
+*.rar

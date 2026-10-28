@@ -1,0 +1,61 @@
+# Build context: /data/codebase-memory-mcp/
+# Paths are relative to that root.
+
+# Git metadata
+**/.git
+**/.gitignore
+
+# Caches
+**/__pycache__
+**/node_modules/.cache
+**/.npm
+**/.cache
+
+# Codegraph per-project indexes (regenerated at startup)
+**/.codegraph
+
+# CBM build intermediates (keep the binary, drop .o and test runners)
+build/c/*.o
+build/c/test-runner
+build/c/test-repro-runner
+build/c/*.a
+
+# CBM release archives (large, not needed at runtime)
+dist/
+pkg/
+
+# CBM local scratch
+memlab-*.jsonl
+memlab-*.log
+soak-*
+test-infrastructure/
+
+# CBM ancillary (not indexed, not needed at runtime)
+docs/
+graph-ui/
+regs/
+chips/
+Formula/
+
+# CBM vendored tree-sitter grammar sources — 1.2 GB, already compiled into the
+# binary as prod_grammar_*.o. Excluded to keep the build context small.
+internal/cbm/vendored/
+
+# CBM top-level vendored upstream metadata
+vendored/*/.git
+vendored/*/.github
+
+# Codegraph dev-only artifacts
+codegraph/.parallels
+codegraph/dist/**/*.d.ts.map
+codegraph/__tests__/
+
+# Editor / agent scratch
+**/.claude
+**/.vscode
+**/.idea
+**/.DS_Store
+
+# Don't re-include the image's own build files (already COPYed explicitly)
+Dockerfile
+docker/Dockerfile

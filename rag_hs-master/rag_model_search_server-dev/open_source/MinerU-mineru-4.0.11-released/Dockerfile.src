@@ -1,0 +1,26 @@
+# 基于 vLLM 镜像，含 CUDA + vLLM 运行时
+FROM vllm/vllm-openai:v0.21.0
+
+# 安装 OpenCV 依赖
+RUN apt-get update && \
+    apt-get install -y libgl1 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# 复制源码到容器
+COPY . /src
+
+# 从源码安装（editable 模式 + torch extra）
+RUN python3 -m pip install -e "/src[torch]" --break-system-packages \
+    -i https://mirrors.aliyun.com/pypi/simple \
+    --extra-index-url https://pypi.org/simple && \
+    python3 -m pip cache purge
+
+# 环境变量：固定模型后端
+ENV MINERU_MODEL_SMALL_BACKEND=torch \
+    MINERU_MODEL_VLM_ENGINE=vllm
+
+# 下载模型（standard 档位 = 小模型 torch + VLM vllm）
+RUN /bin/bash -c "mineru-kit models download --tier standard --small-backend torch --vlm-engine vllm -s modelscope"
+
+# 入口
+ENTRYPOINT ["/bin/bash", "-c", "export MINERU_MODEL_SOURCE=local && exec \"$@\"", "--"]

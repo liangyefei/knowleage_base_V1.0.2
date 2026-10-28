@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.claude
+reference-project
+vite-project
+*.md
+.env.development
+.env.test

@@ -1,0 +1,403 @@
+quarkus:
+  log:
+    console:
+      enabled: true
+      format: "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%t] traceId=%X{traceId} %c.%M %s%e%n"
+  rest-client:
+    model-service:
+      # 模型服务地址（本地开发默认；生产注入环境变量）
+      url: ${MODEL_SERVICE_URL:http://localhost:7860}
+      connect-timeout: 5000
+      # SSE 长连接不设读超时（模型思考期可能长时间无字节，read-timeout 会误杀）；
+      # 模型挂死由业务层 ifNoItem().after(180s) 保护（见 SendMessageCommandService）
+      read-timeout: 0
+    # 冲突检测模型服务（haisi-rag-ingestion，路径前缀 /kw/conflict_detection）
+    # DEV 集群内 Service：http://haisi-rag-ingestion:47860；本地直连 pod：http://127.0.0.1:7861
+    conflict-service:
+      url: ${CONFLICT_SERVICE_URL:http://haisi-rag-ingestion:47860}
+      connect-timeout: 5000
+      read-timeout: 30000
+    # 知识图谱查询服务（dual-mcp，独立于 RAG 模型服务；集群内 Service DNS，本地 port-forward 9789）
+    # 端点集见《API-GRAPH.md》《API-GRAPH-FRAGMENT.md》：GET /projects、POST /graph_search、POST /graph_node、
+    # POST /graph_kg、POST /graph_suggest、POST /graph_fragment、POST /doc_code；文档 KG 由 dual-mcp 代理 mempalace，平台不直连 mempalace
+    kg-service:
+      url: ${KG_SERVICE_URL:http://haisi-dual-mcp:9789}
+      connect-timeout: 5000
+      # 图谱检索快（非 SSE），用有限读超时；区别于 model-service 的 read-timeout:0
+      read-timeout: 10000
+  http:
+    auth:
+      proactive: false
+    root-path: /hisilicon-knowledge
+    # 业务端口统一 8080（两个服务同一个值）：CCE 里每个服务一个 Deployment/容器，
+    # 端口不冲突；统一 8080 让 Service / 探针 / 网关配置一致（native 镜像 EXPOSE 8080）。
+    # 本机要同时起两个服务时覆盖（优先级高于本文件）：
+    #   java -Dquarkus.http.port=8085 -Dquarkus.management.port=9005 -jar ...
+    #   或环境变量 QUARKUS_HTTP_PORT / QUARKUS_MANAGEMENT_PORT（Quarkus 自动把环境变量
+    #   映射到配置键，所以写死 8080 也照样能覆盖，已实测 8099/9099 生效）。
+    # ⚠️ -D 必须在 -jar 之前；写在后面会被当成应用参数忽略（本轮踩过）。
+    port: 8080
+    limits:
+      max-body-size: 500M
+      max-form-attribute-size: 500M
+    host: 0.0.0.0
+    cors:
+      enabled: true
+      origins: ${CORS_ORIGINS:*}
+      methods: GET,HEAD,POST,PUT,DELETE,PATCH,OPTIONS
+      headers: Content-Type,Authorization,Accept,X-Requested-With
+      exposed-headers: Content-Disposition,Tus-Resumable,Upload-Offset,Upload-Length,Upload-Expires,Location,Upload-Metadata
+  # 管理接口独立端口：把非应用端点（当前只有 /q/health）从业务端口剥离到 9000。
+  # 好处：① 探针不占用也不暴露在业务端口上（APIG 只转发 8080 的业务前缀，探针进不来）；
+  #      ② 两个服务的探针地址完全一致（:9000/q/health），与各自 root-path 无关，
+  #         不会因为 root-path 不同而写错探针路径；
+  #      ③ 业务端口只要不 up，探针一起挂，健康信号更真实。
+  # ⚠️ 开启后 :8080/q/health 会变成 404，探针必须改指 9000（CCE 里同步改）。
+  # ⚠️ 只有 health：本项目没引 micrometer/metrics 扩展，:9000/q/metrics 是 404，别按它写监控。
+  # 本机同时起两个服务时管理端口也要错开：-Dquarkus.management.port=9005（同样放在 -jar 之前）。
+  management:
+    enabled: true
+    port: 9000
+  datasource:
+    # 显式声明 db-kind：Quarkus 3.37 中仅 reactive.url 不构成"已定义 datasource"
+    #（实测 devservices.enabled=false 时报 no Reactive datasources have been defined），
+    # 缺 db-kind 会让 Quarkus 判定 datasource 未配置 → 启动 PostgreSQL Dev Service（testcontainers）
+    # → 探测 Docker 引擎。配 db-kind + reactive.url 让 reactive datasource 自配置；
+    # 本项目纯 reactive（无 JDBC 扩展，jdbc.* 会被忽略）。
+    db-kind: postgresql
+    # 显式禁用 devservice：datasource 已自配置（db-kind + reactive.url），无需 testcontainers 兜底；
+    # 与 knowledge 测试配置（redis/kafka.devservices.enabled=false）风格一致。
+    devservices:
+      enabled: false
+    reactive:
+      max-size: 3
+      url: vertx-reactive:postgresql://127.0.0.1:5432/hisilicon_knowledge?search_path=knowledge
+      idle-timeout: PT10M
+    db-version: 18.4
+    username: hisilicon_knowledge
+    # 生产环境由 K8s Secret 注入 QUARKUS_DATASOURCE_PASSWORD 覆盖（envFrom secretRef，见部署文档）；
+    # 默认值仅供本地/测试兜底，勿在生产使用
+    password: ${QUARKUS_DATASOURCE_PASSWORD:123456}
+  # 全局禁用 Dev Services：datasource 已自配置（db-kind + reactive.url），无需 testcontainers 拉容器。
+  # 禁用后 DevServicesProcessor 不再探测 Docker，启动更快且无无关噪声。
+  devservices:
+    enabled: false
+  hibernate-orm:
+    physical-naming-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+    # SQL 日志默认关闭（生产/测试 profile）：① LTS 按量计费，SQL 日志量最大；
+    # ② format-sql 要对每条 SQL 做格式化，bind-parameters 要逐参数展开，都是每条语句的额外 CPU；
+    # ③ bind-parameters 会把参数值明文打进日志平台，属数据外泄面（业务数据、用户标识等）。
+    # 本地开发由文件末尾的 %dev 打开；线上排障请用 ConfigMap/env 临时开启，别改这里。
+    log:
+      sql: false
+      format-sql: false
+      bind-parameters: false
+    # DB jsonb 列（import_batches.default_metadata / upload_sessions.metadata）用 Hibernate 内建
+    # JSON mapper，不复用被 REST 定制的全局 ObjectMapper（LocalDateTimeJacksonCustomizer 等）。
+    # 否则 Quarkus 因检测到全局 ObjectMapper 定制而拒绝启动（@JdbcTypeCode(SqlTypes.JSON) 触发）。
+    # 该配置在 Quarkus 未来版本将为默认值。DB jsonb 不含日期，不受 write-dates-as-timestamps 影响。
+    mapping:
+      format:
+        global: ignore
+  redis:
+    # 生产环境由 K8s Secret 注入 QUARKUS_REDIS_HOSTS 覆盖（如 redis://:pass@host:6379/0）
+    hosts: ${QUARKUS_REDIS_HOSTS:redis://localhost:6379/0}
+    password: ${QUARKUS_REDIS_PASSWORD:}
+    timeout: 5s
+  # Kafka Dev Services 禁用：消息队列用本地/华为云 DMS Kafka，不由 Quarkus 自动拉起容器
+  # （mp.messaging 通道级 bootstrap.servers 不参与 devservices 判定，必须显式关）
+  kafka:
+    devservices:
+      enabled: false
+  container-image:
+    builder: podman
+    registry: swr.cn-south-1.myhuaweicloud.com
+    group: hisilicon-rag
+  package:
+    jar:
+      enabled: false
+  native:
+    enabled: true
+    container-build: true
+    container-runtime: podman
+    # charset 全量烘焙进 native 二进制：GraalVM native 默认仅含 UTF-8/US-ASCII/ISO-8859-1，
+    # ZipFileExtractor 对 Windows 中文 zip 按 GBK 解码条目名，GBK 未注册时 Charset.forName("GBK")
+    # 抛 UnsupportedCharsetException。设 add-all-charsets=true 后 Quarkus 传 -H:+AddAllCharsets（启用）；
+    # ⚠️ 不能用 additional-build-args 加 -H:+AddAllCharsets 绕过——NativeImageBuildStep 在
+    # handleAdditionalProperties（line 961）之后强制追加默认 -H:-AddAllCharsets（line 1033，禁用）覆盖之。
+    add-all-charsets: true
+    additional-build-args:
+      # 时区数据全量烘焙进 native 二进制（运行时由容器 TZ=Asia/Shanghai 控制默认时区，见 Dockerfile.native）。
+      # 不在此设 -Duser.timezone：它是 native-image 构建期进程的系统属性，不进运行时二进制，设了也不生效。
+#      - "-H:+IncludeAllTimeZones"
+      # Quarkus 默认传 --link-at-build-time（GraalVM 25：要求 classpath 所有类在构建时完全定义，
+      # 不含则 zstd 等可选压缩格式会因引用缺失依赖而链接失败）。
+      # commons-compress 的 zstd 类引用 zstd-jni（已引入依赖使链接完整）；
+      # zstd-jni 是 JNI 库（构建容器无 libzstd），且项目运行时仅用 zip 格式解压，
+      # 将 zstd 相关包延迟到 run-time 初始化，避免构建期初始化失败。
+      - "--initialize-at-run-time=org.apache.commons.compress.compressors.zstandard.,com.github.luben.zstd."
+      # ⚠️ 文档抽取相关库（POI/PDFBox/FontBox/Tika）不要加 --initialize-at-run-time：
+      # 它们的 schema/ImageIO-SPI 静态结构（TypeSystemHolder、JBIG2ImageReaderSpi、DocumentFactory…）
+      # 会被构建期初始化的类持有进镜像堆，与运行期规则逐一冲突（UnsupportedFeatureException 连环报错）。
+      # 默认构建期初始化 + 自动探测不安全类是可行解；PDFBox 字体资源已在 resources.includes 打包。
+      # 单独豁免（经实测 necessary evil）：PDFParser 静态注册的 ImageIO reader SPI 触碰 AWT，
+      # 构建期初始化会失败，仅此包延迟到运行期。
+      - "--initialize-at-run-time=org.apache.tika.parser.pdf."
+      # AWT 渲染栈 + 色彩管理（CMM/LCMS）+ PDFBox/FontBox 延迟到 run-time 初始化：
+      # 避免 ICC_ColorSpace / LCMS 等对象在构建期被固化进镜像堆（UnsupportedFeatureException）。
+      # GraalVM 官方对 AWT native 的 catch-all 方案；POI 保持构建期（其 schema 静态自洽，不冲突）。
+      - "--initialize-at-run-time=java.awt.,javax.swing.,sun.awt.,sun.java2d.,sun.java2d.cmm.,java.beans.,org.apache.pdfbox.,org.apache.fontbox."
+    # 本服务不含身份域：classpath 中没有 RSA 私钥（privateKey.pem 随 system 模块只进 hisilicon-knowledge-iam-service），
+    # 也没有任何 Encrypt=> 加密配置值，故无需资源排除。拆分前该排除逻辑在 system 模块，
+    # 离开 system 私钥即不在本服务内，见《海思知识库架构设计-服务拆分评估.md》P1 说明。
+  application:
+    name: hisilicon-knowledge-core-service
+
+  # OpenTelemetry — 仅获取 traceId 注入 MDC，不导出 span
+  otel:
+    sdk:
+      disabled: false
+    traces:
+      exporter: none
+    service:
+      name: hisilicon-knowledge-core-service
+    propagators: tracecontext
+    # 华为云 LTS 对接预留（取消注释并配置 endpoint 后，设置 traces.exporter=otlp）
+    # exporter:
+    #   otlp:
+    #     endpoint: "https://lts-access.xxx.huaweicloud.com"
+    #     headers: "X-Auth-Token=xxx"
+
+  locales: en-US,zh-CN
+
+# DMS Kafka 消息队列（华为云消息队列 Kafka 版）
+# 出站 kb-document-processing：Backend → 模型服务（分区键 = kbId，同 KB 保序）
+# 入站 kb-document-processed：模型服务 → Backend（回调更新 processStatus）
+# 本地开发默认 localhost:9092（Podman Kafka）；生产注入华为云 DMS Kafka 实例地址 + SASL_SSL（见下方注释）
+mp:
+  messaging:
+    outgoing:
+      kb-document-processing-out:
+        connector: smallrye-kafka
+        # 出站 topic 同样按环境区分（入站 topic 见下方 incoming 段）：
+        #   dev/test/release = kb-document-processing / -test / -release
+        # ⚠️ 以 CCE 挂载文件为准（镜像内这份只是 dev 默认值）；入站与出站 topic 是配对的
+        #    （模型端按环境消费自己那一套），改一个必须成对改。
+        # 覆盖方式：KB_KAFKA_TOPIC_DOCUMENT_PROCESSING 或
+        #           MP_MESSAGING_OUTGOING_KB_DOCUMENT_PROCESSING_OUT_TOPIC
+        topic: ${KB_KAFKA_TOPIC_DOCUMENT_PROCESSING:kb-document-processing}
+        # ⚠️ 通道属性必须写成**嵌套 map**，不能写成 `bootstrap.servers:` 这种带点键——
+        #    在 YAML 里带点键会被静默忽略（不报错、不生效），实测对照见评估文档 §10.8.1。
+        bootstrap:
+          servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+        key:
+          serializer: org.apache.kafka.common.serialization.StringSerializer
+        value:
+          serializer: org.apache.kafka.common.serialization.StringSerializer
+        acks: all
+        # 华为云 DMS Kafka 版认证（生产启用，取消注释并注入环境变量）；
+        # ⚠️ 同样保持嵌套写法，`security.protocol` / `sasl.jaas.config` 这种带点键不生效：
+        # security:
+        #   protocol: SASL_SSL
+        # sasl:
+        #   mechanism: PLAIN
+        #   jaas:
+        #     config: org.apache.kafka.common.security.plain.PlainLoginModule required username="${KAFKA_USERNAME}" password="${KAFKA_PASSWORD}";
+    incoming:
+      kb-document-processed-in:
+        connector: smallrye-kafka
+        # ── 环境隔离三件套：topic / 消费组 / 死信主题（2026-10-13 故障后固化，必读）──────
+        # 三件套必须【同时】按环境改，缺一不可。只改 topic 不改组名 = 回退到本次故障形态：
+        #   多个环境落进同一个消费组 → 先启动的环境占走分区与位点 → 后启动环境的 pod
+        #   成员在线、探针全绿、零 ERROR 日志、lag≈0，却永不消费（dev 静默 23 小时即此）。
+        # 根因是各环境应用名相同：组名若缺省或被各环境统一写成应用名，就必然共组。
+        #
+        # ⚠️ 本文件只是 dev 默认值 / 参考模板。环境实际生效的是 **CCE 挂载的那份配置文件**
+        #    （改镜像内这份不影响任何环境）。每环境在挂载文件里显式写下面三行：
+        #
+        #  环境      topic                           group.id                               死信主题
+        #  dev      kb-document-processed           kb-document-processed-consumer          kb-document-processed-dlq
+        #  test     kb-document-processed-test      kb-document-processed-consumer-test     kb-document-processed-dlq-test
+        #  release  kb-document-processed-release   kb-document-processed-consumer-release  kb-document-processed-dlq-release
+        #
+        # ⚠️ 不要用 ${...topic}-consumer / ${...topic}-dlq 之类派生：DMS 里死信命名是
+        #    "<base>-dlq<suffix>"（后缀在最后），派生得到的是 "<topic>-dlq"（= ...-release-dlq），
+        #    两者不相等；配成不存在的死信主题会让 nack 写死信失败并**终止整条消费通道**
+        #    （该 pod 此后永不消费、无 ERROR、探针全绿）。组名可自定，只要每环境唯一即可。
+        # 上线后必查：启动日志 SRMSG18229(topic) / SRMSG18257(消费组) / SRMSG18258(死信) 三行，
+        #            以及 DMS 控制台消费组列表里本环境只应出现自己那一个组。
+        # ⚠️⚠️ 三件套在 YAML 里必须写成**嵌套 map**（形状见下方字段）。写成 `group.id:` /
+        #    `dead-letter-queue.topic:` 这种带点键会被**静默忽略**——不报错、也不生效，于是
+        #    组名回落成 `quarkus.application.name`、死信主题回落成 smallrye 默认名
+        #    `dead-letter-topic-<channel>`。三个环境应用名相同 ⇒ 必然共组 ⇒ 正是本段开头
+        #    描述的"成员在线、探针全绿、零 ERROR、lag≈0 却永不消费"。2026-10-13 那次极可能就是
+        #    栽在这里：本文件与旧聚合服务当年都用了带点键写法，而带点键从未生效过。
+        #    一行验证：看 SRMSG18257 显示的是不是本环境配的组名；显示应用名即命中。
+        #    等价写法：用 .properties 文件 mp.messaging.incoming.<channel>.<属性>=...
+        #    ⚠️ 环境变量形式 MP_MESSAGING_INCOMING_KB_DOCUMENT_PROCESSED_IN_GROUP_ID 不可用：
+        #       通道名含连字符会被还原成名为 `kb` 的通道，直接启动失败（SRMSG00071）。
+        # ⚠️ 配置优先级：挂载的 application.yml > 本文件（镜像里的默认值）；pod 里的同名环境变量
+        #    对**通道级属性**不适用——见上方 SRMSG00071 那条，通道名含连字符时环境变量会直接让启动失败。
+        #    排查时先 `env | grep -i kafka` 看有没有人塞了 KAFKA_* / MP_MESSAGING_* 变量。
+        topic: kb-document-processed
+        # ⚠️ 下面全部是嵌套 map 写法，**不要改回 `group.id:` 这类带点键**：
+        #    YAML 里带点键会被静默忽略（不报错、不生效），用挂载文件覆盖时更要照抄这个形状。
+        bootstrap:
+          servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+        group:
+          id: kb-document-processed-consumer
+        key:
+          deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        value:
+          deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        auto:
+          offset:
+            reset: earliest
+        # 协作式重平衡（多 Pod + HPA 场景必需）：组成员变化（伸缩、发版、重启）时只迁移需要移动的
+        # 分区，不再"全组停摆 + 撤销全部分区"，把问答流量扩缩对文档回调消费的打断降到最小。
+        # 组内所有成员都支持协作式协议才生效；本服务统一 kafka-clients 4.2.1，满足条件。
+        partition:
+          assignment:
+            strategy: org.apache.kafka.clients.consumer.CooperativeStickyAssignor
+        # 并发度=1：固化单分区顺序消费（@Incoming 返回 Uni，背压——Uni 完成才处理下一条）。
+        # 禁止 >1，否则同分区消息并发处理导致同 documentId 回调乱序。
+        concurrency: 1
+        # 失败策略：dead-letter-queue（nack 的消息写死信并提交位点）。
+        # 消费端（DmsProcessCallbackConsumer）已按三类分流，别只按 failure-strategy 理解：
+        #   ① 非法信封 / 未知 eventType / 缺 messageId / 缺 kbId → ERROR 日志 + ACK，不进死信；
+        #   ② 瞬时故障（DB/连接/超时/死锁等）→ 有界重试（配置见下方 kb.messaging.callback.retry.*，
+        #      默认 3 次尝试、退避 200ms，每次重试是独立事务），重试耗尽才 nack → 死信；
+        #   ③ 不可恢复错误（BusinessException / IllegalArgumentException）→ 不重试，直接 nack → 死信。
+        # ⚠️ 死信主题名必须【真实存在且按环境显式配置】：写死信失败会导致 nack 失败并
+        #    【终止整条消费通道】（KafkaDeadLetterQueue.handle 里 future.completeExceptionally
+        #    向上抛），此后该 pod 永久不消费、无 ERROR 日志、探针全绿。
+        #    名称对不上就是这么挂的，务必与本环境 DMS 里的名字逐字比对。
+        # DLQ 消息由人工/对账任务排查后重放；earliest 重放由 messageId 幂等兜底。
+        failure-strategy: dead-letter-queue
+        dead-letter-queue:
+          topic: kb-document-processed-dlq
+        # 瞬时故障有界重试：max-attempts 含首次尝试；backoff-ms 为退避基数（指数增长）。
+        # 约束：总耗时必须远小于 max.poll.interval.ms（默认 5 分钟），否则消费者会被踢出组触发重平衡。
+        # kb.messaging.callback.retry.max-attempts: 3
+        # kb.messaging.callback.retry.backoff-ms: 200
+        # 认证同出站
+
+# 模型服务 REST Client（HaiSI RAG Server）——配置见文件顶部 quarkus.rest-client.model-service 节点
+# （@RegisterRestClient(configKey="model-service") 需 quarkus.rest-client.model-service.url，
+#  不是 mp-rest 风格，否则运行时 Unable to determine baseUrl）
+
+# 文件存储配置（当前：本地文件系统，后续可切华为云 SFS）
+kb:
+  storage:
+    type: local
+    # 多副本部署必须将此路径覆盖为多 Pod 共享挂载（生产 SFS Turbo），且挂载参数必须含
+    # noac,lookupcache=none（关闭 NFS 属性缓存）——否则 pod-B 读到刚被 pod-A append 后的
+    # 陈旧文件长度，断点校验偶发 409（差值=整数个分片）。服务端已有双源仲裁自愈兜底该瞬态
+    # （TUS_ATTRCACHE_HEAL 日志），但仅为兜底，不能替代挂载参数。
+    local-path: /data/kb-files
+    # 回收目录保留期（天）：文档物理删除后文件先移入 trash 目录，超过该天数由定时任务物理删除
+    trash-retention-days: 7
+  # 对话图片兜底放行目录：模型端解析 PDF 抽出的图片落在自己的产物目录（如 /kb-files/mineru_output/…），
+  # 这些文件不是平台文档树文件、documents 表里没有行，文档图片域签名签不出来（图片在问答里不显示）。
+  # 本配置给出"这些图片可以走 /kb/chat/assets 兜底签发"的目录白名单（逗号分隔的存储相对目录）。
+  # 空白 = 关闭兜底（行为与引入该功能前一致：引用保持原样、前端不显示）。
+  # 安全边界：白名单是这部分图片可访问范围的唯一来源（没有文档行可绑定），只能放行自己人写的目录；
+  # 签发侧与服务侧共用同一判定（段级前缀匹配，mineru_output_old/ 不会被 mineru_output 认领），
+  # 服务侧另做真实路径（解析软链后）复核，堵软链逃逸。
+  # 注意：目录名由模型端决定，模型端改名必须同步本配置——否则图片静默不显示（判定失败只留 WARN 日志）。
+  # 生命周期：该目录由模型端按归档/废弃事件清理，平台不承担（清理后历史问答里的图片失效，已与产品确认）。
+  chat:
+    image-fallback-dirs: mineru_output
+  # 全局搜索按内容检索（document_contents，Tika 异步抽取）
+  search:
+    # 单文档抽取文本截断上限（字符）：上限限制的是抽取出的纯文本而非文件大小，
+    # 1MB 文本 ≈ 50 万汉字（千页级），99%+ 文档不会触顶；超长文档尾部不可内容检索
+    content-max-chars: 2000000
+    # 单文件抽取超时（秒）：超时写 FAILED 行，不影响主流程
+    extract-timeout-seconds: 30
+    # 回填任务（DocumentContentBackfillJob）单轮批量上限（存量回填期间可临时调大）
+    backfill-batch-size: 1000
+    # 回填任务执行周期（Quarkus cron 语法；存量回填期间可临时调密如 "0 */10 * * * ?"，完成后调回）
+    backfill-cron: "0 45 * * * ?"
+  # 事务发件箱（Transactional Outbox）：relay 定时扫描 PENDING 消息发送到 DMS Kafka
+  outbox:
+    poll-interval: 10s
+    batch-size: 1000
+    # 退避：发送失败后按 retry_count 指数退避（delay = min(base << retry_count, max)）。
+    # retry_count=0 → base（与 poll-interval 相当，快速重试瞬时故障）；之后倍增，封顶 max。
+    # 避免故障期 relay 每 tick 狂试头部失败消息、给 Kafka 压力且同 KB 后续消息被头部阻塞。
+    retry-base-delay-seconds: 10
+    retry-max-delay-seconds: 300
+  # 上传保护
+  upload:
+    # ZIP 压缩包单包最大文件条目数（解压上限，防超长处理链/zip 炸弹）
+    zip-max-entries: 5000
+    # ZIP 压缩包解压总字节上限（防高压缩比 zip 炸弹内存溢出）
+    zip-max-total-size: 5G
+    # 同步上传单文件大小上限（业务约束，与 HTTP 层 max-body-size 独立）
+    max-file-size: 100M
+    # 对话问答文件大小上限（每会话 1 个，类型白名单同知识库文档上传，不支持压缩包）
+    chat-max-file-size: 10M
+  # 初始化批量上传（tus 断点续传，见 docs/海思知识库架构设计-初始化批量上传设计.md）
+  import:
+    enabled: true
+    tus:
+      # 单文件大小上限（tus Upload-Length 校验；HTTP 层 max-body-size 限单片 PATCH < 500M）
+      max-file-size: 10G
+      # 会话过期小时数（超期未完成由 UploadSessionCleanupJob 清理，临时文件移 trash）
+      expire-hours: 168
+      # 批量 zip complete 前置预检目录层级上限（zip 内相对路径段数，含文件名段；仅读 central
+      # directory 元数据判定，超限在解压前同步报错，不写解压临时文件、不进后台落库流程）
+      zip-max-depth: 20
+      # 批量 zip complete 异步解压上限（独立于普通上传 kb.upload.*，流式逐条目无 OOM 风险）
+      # 条目数上限（防超长处理链；SDK 代码仓库可达数千文件，10000 与 batch.max-files 对齐，超限整体 FAILED）
+      zip-max-entries: 5000
+      # 解压总量上限（5GB zip 解压后 ~5GB，10G 留余量；普通上传仍受 kb.upload.zip-max-total-size=1G 约束）
+      zip-max-total-size: 10G
+    batch:
+      # 单批次文件数上限
+      max-files: 5000
+      # 单批次总字节上限
+      max-total-size: 5G
+      # 前端并发上传通道数提示（服务端逐会话独立，非强制）
+      max-concurrent-uploads: 5
+  # 知识图谱对接（dual-mcp《API-GRAPH.md》端点集；project 直接取前端传的 kbId）
+  kg:
+    # 模型侧原文查看页公网基址（GET /kg/doc-view 303 跳转目标，浏览器直接打开，必须是公网地址）。
+    # 注意：与后端调模型 API 的 quarkus.rest-client.kg-service.url（集群内地址）是两个用途、两个配置。
+    # 专属变量 KB_KG_PUBLIC_URL，勿复用 KG_PUBLIC_URL（后者易被按"服务地址"误设为集群内 .svc 地址，
+    # 导致浏览器解析不了跳转地址）。内部地址由 KnowledgeGraphResource 检测并打 ERROR 日志兜底。
+    public-url: ${KB_KG_PUBLIC_URL:http://139.9.104.64:9789}
+  # 冲突检测（对接模型端 V1.2，CONFLICT-DETECTION-API.md）
+  conflict:
+    model:
+      # stub = 桩实现（默认，不真正调模型）；remote = 走真实 rest-client
+      client-mode: ${KB_CONFLICT_CLIENT_MODE:remote}
+    # 任务轮询/串行调度 Job 间隔
+    poll-interval: ${KB_CONFLICT_POLL_INTERVAL:15s}
+  # DMS Kafka 消息通知开关（@IfBuildProperty 构建期属性，运行时改 env 无效）
+  #   false = NoopStreamPublisher（本地 quarkusDev 默认 profile=dev，用此值，无需 Kafka）
+  #   true  = DmsStreamPublisher + DmsProcessCallbackConsumer（需 Kafka 可达）
+  # 生产：见下方 %prod（gradle build / build.ps1 默认 profile=prod，打包时烘焙为 true）
+  messaging:
+    kafka:
+      enabled: false
+
+# 生产/打包 profile（quarkusDev 不会激活；./gradlew build 与 build.ps1 默认 prod）
+"%prod":
+  kb:
+    messaging:
+      kafka:
+        enabled: true
+
+# dev profile（quarkusDev 默认激活）：本地才打开 Hibernate SQL 日志，方便看生成的 SQL 与绑定参数。
+# 生产/测试 profile 不吃这段 —— 所以"在外挂 ConfigMap 里删掉 hibernate-orm 段"并不会关掉 SQL 日志：
+# 外挂配置是**叠加**语义，删掉只是回落到本文件的值（此处已改为 false）。
+"%dev":
+  quarkus:
+    hibernate-orm:
+      log:
+        sql: true
+        format-sql: true
+        bind-parameters: true
+

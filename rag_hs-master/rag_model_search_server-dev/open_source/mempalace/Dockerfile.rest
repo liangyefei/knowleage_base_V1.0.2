@@ -1,0 +1,48 @@
+# syntax=swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/docker/dockerfile:1.7
+#
+# MemPalace REST adapter image.
+#
+# Layers FastAPI + the REST adapter (examples/rest_adapter.py) on top of the
+# stock CPU image (Dockerfile). FastAPI/uvicorn are not core MemPalace deps
+# (the project ships only stdlib HTTP), so they are added as a thin layer here
+# rather than baked into the base image.
+#
+# Build (requires the base image to exist first):
+#   docker build -t haisi-mempalace:latest -f Dockerfile .   # base, if missing
+#   docker build -t haisi-mempalace:rest      -f Dockerfile.rest .
+#
+# Run (loopback; put Caddy/nginx in front for TLS before exposing):
+#   docker run -d -p 127.0.0.1:8777:8777 \
+#     -e MEMPALACE_REST_TOKEN="$TOKEN" -v mempalace-data:/data haisi-mempalace:rest
+#
+# Expose to a network (operator's call — see examples/rest_adapter.py docstring):
+#   -e MEMPALACE_REST_HOST=0.0.0.0 -e MEMPALACE_REST_TOKEN="$TOKEN"  (token REQUIRED)
+
+FROM haisi-mempalace:latest
+
+# The base image's venv was created by uv, which ships no pip. ensurepip
+# bootstraps pip into the venv so we can add FastAPI the standard way (uv itself
+# isn't in the runtime image — it lives in the builder stage only). Runs as root
+# (the base image's final USER is mempalace) so we can write into /app/.venv;
+# we drop back to mempalace at the end.
+USER root
+RUN /app/.venv/bin/python -m ensurepip --upgrade \
+    && /app/.venv/bin/python -m pip install --no-cache-dir fastapi "uvicorn[standard]"
+
+# The adapter lives under examples/, which .dockerignore excludes wholesale;
+# the !examples/rest_adapter.py exception above re-admits just this file.
+COPY --chown=mempalace:mempalace examples/rest_adapter.py /app/rest_adapter.py
+
+USER mempalace
+
+# Loopback + a non-empty token is the safe default. The adapter is fail-closed:
+# it REFUSES TO START on a non-loopback bind without MEMPALACE_REST_TOKEN.
+ENV MEMPALACE_REST_HOST=127.0.0.1 \
+    MEMPALACE_REST_PORT=8777 \
+    PYTHONUNBUFFERED=1
+
+EXPOSE 8777
+
+# Override the base image's docker-entrypoint.sh — the REST adapter is its own
+# long-running process, not a mempalace subcommand.
+ENTRYPOINT ["python", "/app/rest_adapter.py"]

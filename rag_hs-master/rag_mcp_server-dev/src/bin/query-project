@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# query-project: convenience wrapper for CBM NL HTTP /query.
+#
+# Usage:
+#   query-project <project_name> <query...>
+#   query-project opt-Hi3516CV610 video init
+#   query-project opt-codegraph ExtractionOrchestrator
+#
+# Tip: run `list-projects` (no args) to see valid project names.
+
+set -euo pipefail
+
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 <project_name> <query...>" >&2
+  echo "" >&2
+  echo "Examples:" >&2
+  echo "  $0 opt-Hi3516CV610 video init" >&2
+  echo "  $0 opt-codegraph ExtractionOrchestrator" >&2
+  echo "" >&2
+  echo "Run 'list-projects' to see valid project names." >&2
+  exit 1
+fi
+
+PROJECT="$1"
+shift
+QUERY="$*"
+
+PAYLOAD=$(python3 -c "
+import json, sys
+print(json.dumps({'q': sys.argv[1], 'project': sys.argv[2]}))
+" "$QUERY" "$PROJECT")
+
+echo "Querying '${PROJECT}' for '${QUERY}'..."
+echo ""
+
+curl -sf -X POST "http://localhost:${NL_PORT:-9788}/query" \
+  -H 'Content-Type: application/json' \
+  -d "$PAYLOAD" \
+  | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    matches = d.get('matches', [])
+    print(f\"{len(matches)} match(es) for '{d.get('question', '')}':\")
+    for m in matches:
+        name = m.get('name', '?')
+        label = m.get('label', '?')
+        path = m.get('file_path', '?')
+        line = m.get('start_line', '?')
+        qn = m.get('qualified_name', '')
+        indeg = m.get('in_degree', 0)
+        outdeg = m.get('out_degree', 0)
+        print(f\"  - {name} ({label}) @ {path}:{line}\")
+        print(f\"      in={indeg} out={outdeg}  {qn}\")
+    if not matches:
+        print('  (no matches)')
+except Exception as e:
+    print(f'parse error: {e}', file=sys.stderr)
+    sys.exit(1)
+"

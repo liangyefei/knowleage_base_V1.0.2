@@ -1,0 +1,86 @@
+# 知识库问答镜像（读路径）
+# Phase 2 A 方案：upload_temp_docs 已移到 Ingest 块（带解析栈写入共享 Milvus temp_{id}），
+# QA 不再做文件解析，镜像去掉解析栈（libreoffice / jdk / ghostscript / libmagic / libgl /
+# unstructured / tree-sitter / parsers），预计瘦身 1.2GB+。
+# 保留 streamlit（WebUI 并入 QA，3.5-B）+ langchain（chat 链）+ reranker + LLM API + 向量查询 + DB 读。
+# - HAISI_RUN_MODE=qa：startup_qa.py 跳过 KafkaCommServer，api.py 仅挂问答路由 + file_chat（查共享 Milvus）
+# - 无 kafka-python：startup.py 已把 KafkaCommServer import 延迟到 ingest/all 分支，qa 不触发
+# - 对应 K8s：qa Deployment（秒级、低 CPU、高 QPS、多副本 + HPA）+ 8501 端口（WebUI 并入）
+FROM swr.cn-north-4.myhuaweicloud.com/ddn-k8s/ghcr.io/astral-sh/uv:python3.10-bookworm-slim
+
+LABEL version="1.0" date="2026-07-30 14:04"
+LABEL baseimages="uv:python3.10-bookworm-slim"
+LABEL maintainer="taylor.he@ferban.com"
+
+# 更新系统软件
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && sed -i 's|deb.debian.org|mirrors.aliyun.com|g; s|security.debian.org|mirrors.aliyun.com|g' \
+        /etc/apt/sources.list.d/debian.sources 2>/dev/null || true \
+    && sed -i 's|deb.debian.org|mirrors.aliyun.com|g; s|security.debian.org|mirrors.aliyun.com|g' \
+        /etc/apt/sources.list 2>/dev/null || true \
+    && apt-get -y update --fix-missing \
+    && apt-get install -y -f --fix-missing tzdata net-tools openssh-server build-essential vim software-properties-common curl locales zstd tmux git \
+    && apt-get autoremove -y --force-yes \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && sed -i 's/^# *zh_CN.UTF-8/zh_CN.UTF-8/' /etc/locale.gen \
+    && locale-gen zh_CN.UTF-8 \
+    && ln -fs /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && dpkg-reconfigure --frontend noninteractive tzdata \
+    && echo "export LANG='zh_CN.UTF-8'" >> /etc/profile \
+    && echo "export LC_ALL='zh_CN.UTF-8'" >> ~/.bashrc
+
+# ==================================================================
+# Phase 2 A 方案：QA 不再解析文件，去掉解析系统依赖层
+# （libreoffice / default-jdk / ghostscript / libmagic-dev / libgl1-mesa-glx 均移除）
+# 原 Phase 1 B 方案的 apt 解析依赖 RUN 整块删除，镜像预计瘦身 1.2GB+
+
+# 配置 uv 阿里云 PyPI 镜像（基础镜像自带 uv 与 pip，无需 get-pip.py）
+ENV UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ \
+    UV_HTTP_TIMEOUT=120
+
+
+# QA 瘦身依赖：去掉 22 个解析/Kafka/OCR 重包（kafka-python / PyMuPDF / pdfplumber / unstructured /
+# opencv-python / python-docx / python-pptx / tabula-py / JPype1 / pycocotools / shapely 等），详见 requirements-qa.txt
+COPY docker/requirements-qa.txt /workspace/requirements-qa.txt
+RUN uv pip install --system --no-cache -r /workspace/requirements-qa.txt
+
+# uvloop（uvicorn 高性能事件循环，QA 高 QPS 场景需要）
+RUN uv pip install --system uvloop -i https://pypi.tuna.tsinghua.edu.cn/simple
+
+# nltk_data（langchain text_splitter 依赖；QA 虽不解析，但保守保留避免 langchain 间接 import 报错）
+# 先创建目录
+RUN mkdir -p /root/nltk_data/taggers /root/nltk_data/tokenizers
+# 复制压缩包进镜像
+COPY assets/nltk_data/tokenizers /root/nltk_data/tokenizers
+COPY assets/nltk_data/taggers /root/nltk_data/taggers
+
+# ==================================================================
+# 配置 sshd（openssh-server 已在上一步 apt install 安装）
+# 生产容器：sshd 不作为主进程，仅供调试；主进程为 startup_qa.py
+RUN mkdir -p /var/run/sshd \
+    && sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config \
+    && sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config \
+    && echo 'root:123456' | chpasswd
+
+# EXPOSE 仅声明 ENTRYPOINT 自动启起的端口：
+# - 7861 API（startup_qa.py → sys.argv=--all-webui，起 API + WebUI）
+# - 8501 WebUI（streamlit）
+# 22（sshd）未自动启动，仅供调试；12345 旧版端口 startup 不使用
+EXPOSE 7861 8501
+
+# ==================================================================
+RUN echo "export TF_ENABLE_ONEDNN_OPTS=0" >> /etc/profile
+
+COPY . /workspace/haisi_rag_models_server
+
+RUN chmod +x /workspace/haisi_rag_models_server
+
+WORKDIR /workspace/haisi_rag_models_server/
+
+# 运行模式 env 放在 COPY 之后：改 env 不会让 apt/pip 层缓存失效；startup_qa.py 会在 runtime 再设一次
+ENV HAISI_RUN_MODE=qa
+
+# Phase 2 A 方案：startup_qa.py 入口（env=qa + argv=--all-webui，复用 startup.py 的 start_main_server，
+# 起问答 API + WebUI（3.5-B 并入），跳过 KafkaCommServer）
+ENTRYPOINT ["python3", "startup_qa.py"]

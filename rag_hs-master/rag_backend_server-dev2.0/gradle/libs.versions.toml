@@ -1,0 +1,147 @@
+[versions]
+# Platform BOM 版本
+# 3.39.2：为引入 quarkus-poi 升级。quarkus-poi 依赖 quarkus-awt 扩展，须与核心同版本线
+# （3.37.3 下 quarkus-awt 的 AwtProcessor 引用了 core-deployment 中缺失的 ProcessInheritIODisabled → 增强失败）
+quarkus-platform = "3.39.2"
+
+quarkus-mapstruct = "1.1.0"
+
+mapstruct = "1.7.0.Beta2"
+
+owaspVersion = "1.3.1"
+bcpkixVersion = "1.81"
+restAssuredVersion = "5.5.0"
+commonsCompressVersion = "1.27.1"
+zstdJniVersion = "1.5.7-13"
+
+# junrar：RAR4 只读解压（纯 Java；commons-compress 不支持 RAR，主线 junrar 也不支持 RAR5）
+junrarVersion = "7.5.5"
+
+# 7-Zip-JBinding：RAR5 解压（JNI，绑定各平台 native 库；junrar 主线明确不支持 RAR5）
+sevenZipJBindingVersion = "16.02-2.01"
+
+# Apache Tika：文档文本抽取（pdf/word/excel/ppt/txt/html/md），用于全局搜索按内容检索
+tikaVersion = "3.2.1"
+
+# Quarkiverse POI 扩展：为 Apache POI 打包 native image 所需的反射/资源配置（官方维护）
+# https://docs.quarkiverse.io/quarkus-poi/dev/index.html ；native 容器需安装 freetype fontconfig（见 Dockerfile.native）
+quarkusPoiVersion = "2.2.1"
+
+# java-diff-utils：版本对比行级 diff（纯 Java、无反射/资源发现，native 友好）
+javaDiffUtilsVersion = "4.12"
+
+# jose4j：smallrye-jwt 的验签引擎（commons-oidc 直接使用其 JwtConsumer API）
+jose4jVersion = "0.9.6"
+
+# Quarkiverse MCP Server：MCP 网关（hisilicon-knowledge-mcp-gateway）的协议层实现。
+# ⚠️ 必须锁 2.0.3，不能随手升到 2.1.x：
+#   2.0.3 的核心 JAR 内 META-INF/quarkus-extension.properties 声明 requires-quarkus-version=[3.33,)，
+#   与本项目 quarkus-platform = 3.39.2 兼容；
+#   而 2.1.0.Beta1 声明 requires-quarkus-version=[3.40,)，会**拒绝** 3.39.2（Quarkus 启动即报版本不满足）。
+#   升级本项目 Quarkus 平台版本前，先核对目标版本区间的 requires-quarkus-version。
+# 协议版本：2.x 实现 MCP 2026-07-28，并向下兼容 2025-03-26 / 2024-11-05——
+#   实测 dev 环境四个上游分别协商出 2025-06-18 与 2024-11-05，网关对外支持的版本与对上游协商的版本**分别维护**。
+quarkusMcpServerVersion = "2.0.3"
+
+# Hutool DFA 模块（仅用 cn.hutool.dfa.WordTree 做敏感词 DFA 匹配；纯集合实现，native 安全）
+hutoolVersion = "5.8.47"
+
+[libraries]
+# Quarkus BOM
+quarkus-bom = { module = "io.quarkus.platform:quarkus-bom", version.ref = "quarkus-platform" }
+
+# 其他 Quarkus 扩展
+quarkus-rest = { module = "io.quarkus:quarkus-rest", version.ref = "quarkus-platform" }
+quarkus-rest-jackson = { module = "io.quarkus:quarkus-rest-jackson", version.ref = "quarkus-platform" }
+quarkus-rest-client-jackson = { module = "io.quarkus:quarkus-rest-client-jackson", version.ref = "quarkus-platform" }
+quarkus-config-yaml = { module = "io.quarkus:quarkus-config-yaml", version.ref = "quarkus-platform" }
+quarkus-arc = { module = "io.quarkus:quarkus-arc", version.ref = "quarkus-platform" }
+quarkus-smallrye-health = { module = "io.quarkus:quarkus-smallrye-health", version.ref = "quarkus-platform" }
+quarkus-mapstruct = { module = "io.quarkiverse.mapstruct:quarkus-mapstruct", version.ref = "quarkus-mapstruct" }
+quarkus-container-image-podman = { module = "io.quarkus:quarkus-container-image-podman", version.ref = "quarkus-platform" }
+quarkus-rest-qute = { module = "io.quarkus:quarkus-rest-qute", version.ref = "quarkus-platform" }
+# Vert.x HTTP（含 Mutiny 版 WebClient 绑定）：MCP 网关调用上游 MCP 服务用
+# （上游地址是运行期配置，不适合 @RegisterRestClient 的编译期 baseUri；且 MCP 是同一端点上的 JSON-RPC）
+quarkus-vertx-http = { module = "io.quarkus:quarkus-vertx-http", version.ref = "quarkus-platform" }
+# Mutiny 版 Vert.x WebClient 绑定：quarkus-vertx-http 只传递 -web/-web-common/-core，**不含 web-client**，
+# 必须显式声明（版本对齐 Quarkus 3.39.2 所用的 smallrye-mutiny-vertx 线 3.23.0）
+smallrye-mutiny-vertx-web-client = { module = "io.smallrye.reactive:smallrye-mutiny-vertx-web-client", version = "3.23.0" }
+# Quarkiverse POI（native 支持，见上）
+quarkus-poi = { module = "io.quarkiverse.poi:quarkus-poi", version.ref = "quarkusPoiVersion" }
+# quarkus-awt 独立于 platform BOM 发布：须与 core 同版本线显式固定，否则 Gradle 按 quarkus-poi 的
+# depManagement 解析到旧版（3.27.1）导致 AwtProcessor 引用的 core build item 缺失（增强崩溃）
+quarkus-awt = { module = "io.quarkus:quarkus-awt", version.ref = "quarkus-platform" }
+quarkus-awt-deployment = { module = "io.quarkus:quarkus-awt-deployment", version.ref = "quarkus-platform" }
+
+quarkus-hibernate-validator = { module = "io.quarkus:quarkus-hibernate-validator", version.ref = "quarkus-platform" }
+quarkus-hibernate-reactive = { module = "io.quarkus:quarkus-hibernate-reactive", version.ref = "quarkus-platform" }
+quarkus-hibernate-reactive-panache = { module = "io.quarkus:quarkus-hibernate-reactive-panache", version.ref = "quarkus-platform" }
+quarkus-reactive-pg-client = { module = "io.quarkus:quarkus-reactive-pg-client", version.ref = "quarkus-platform" }
+quarkus-redis-client = { module = "io.quarkus:quarkus-redis-client", version.ref = "quarkus-platform" }
+# DMS Kafka 消息通知（SmallRye Reactive Messaging Kafka Connector，华为云消息队列 Kafka 版兼容）
+# 注意：Quarkus 3.17+ 扩展改名，旧名 quarkus-smallrye-reactive-messaging-kafka 已不存在
+quarkus-messaging-kafka = { module = "io.quarkus:quarkus-messaging-kafka", version.ref = "quarkus-platform" }
+
+quarkus-junit5 = { module = "io.quarkus:quarkus-junit5", version.ref = "quarkus-platform" }
+quarkus-scheduler = { module = "io.quarkus:quarkus-scheduler", version.ref = "quarkus-platform" }
+mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
+mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
+
+bcpkix-jdk18on = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bcpkixVersion" }
+owasp-encoder = { module = "org.owasp.encoder:encoder", version.ref = "owaspVersion" }
+
+rest-assured = { module = "io.rest-assured:rest-assured", version.ref = "restAssuredVersion" }
+
+# ZIP/RAR 解压（替代 java.util.zip.ZipInputStream——对非标准 header 更宽容，支持 GBK 条目名）
+commons-compress = { module = "org.apache.commons:commons-compress", version.ref = "commonsCompressVersion" }
+# commons-compress 的 zstd 格式可选依赖：GraalVM 25 --link-at-build-time 要求 classpath 所有类引用完整，
+# 缺它会导致 native 构建链接 ZstdCompressorInputStream 失败（见 application.yml 注释）
+zstd-jni = { module = "com.github.luben:zstd-jni", version.ref = "zstdJniVersion" }
+# RAR 只读解压（RAR4；主线 junrar 不支持 RAR5）
+junrar = { module = "com.github.junrar:junrar", version.ref = "junrarVersion" }
+# RAR5 解压（JNI；all-platforms 内置各平台 native 库，运行期自动装载）
+sevenzipjbinding = { module = "net.sf.sevenzipjbinding:sevenzipjbinding", version.ref = "sevenZipJBindingVersion" }
+sevenzipjbinding-all-platforms = { module = "net.sf.sevenzipjbinding:sevenzipjbinding-all-platforms", version.ref = "sevenZipJBindingVersion" }
+
+# 文档文本抽取（全局搜索按内容检索）：一个依赖覆盖 pdf/word/excel/ppt + txt/html/md。
+# ⚠️ native 镜像风险：Tika 反射元数据较重，native 构建如报反射缺失，需补充 resources.includes /
+# reflect-config（Tika 用法已隔离在 DocumentContentIndexService 单类，便于收敛配置）
+tika-parsers-standard = { module = "org.apache.tika:tika-parsers-standard-package", version.ref = "tikaVersion" }
+tika-core = { module = "org.apache.tika:tika-core", version.ref = "tikaVersion" }
+
+# 版本对比行级 diff（VersionDiffQueryService 用）
+java-diff-utils = { module = "io.github.java-diff-utils:java-diff-utils", version.ref = "javaDiffUtilsVersion" }
+
+# 敏感词 DFA 匹配（独立模块 hutool-dfa，dfa 包不在 hutool-core 中，不引 hutool-all）
+hutool-dfa = { module = "cn.hutool:hutool-dfa", version.ref = "hutoolVersion" }
+
+# CSV 解析/生成（敏感词词库导入导出；纯 Java，native 安全）
+commons-csv = { module = "org.apache.commons:commons-csv", version = "1.14.1" }
+
+# Mockito for @QuarkusTest / 纯 JUnit 单测
+quarkus-junit5-mockito = { module = "io.quarkus:quarkus-junit5-mockito", version.ref = "quarkus-platform" }
+
+# OpenTelemetry — 用于 TraceId 日志注入
+quarkus-opentelemetry = { module = "io.quarkus:quarkus-opentelemetry" }
+
+# Quarkus SmallRye JWT — 管理版本，含 smallrye-jwt-build 用于生成 token
+quarkus-smallrye-jwt = { module = "io.quarkus:quarkus-smallrye-jwt" }
+
+# Quarkus OIDC — OneAccess（华为云统一身份门户）web-app 授权码流程（由 iam-service 部署单元装配）
+quarkus-oidc = { module = "io.quarkus:quarkus-oidc", version.ref = "quarkus-platform" }
+
+# jose4j（commons-oidc 验签引擎；版本对齐 smallrye-jwt 使用的 0.9.x 线；坐标是 bitbucket 的 b_c）
+jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4jVersion" }
+
+# Quarkiverse MCP Server（入站 MCP 网关的协议层；版本锁定理由见 [versions] 同名注释）
+# -http：Streamable HTTP 传输（含已废弃的 HTTP/SSE 变体），暴露 {root-path} 端点
+quarkus-mcp-server-http = { module = "io.quarkiverse.mcp:quarkus-mcp-server-http", version.ref = "quarkusMcpServerVersion" }
+# -test：McpAssured 测试客户端（仅 testImplementation 使用）
+quarkus-mcp-server-test = { module = "io.quarkiverse.mcp:quarkus-mcp-server-test", version.ref = "quarkusMcpServerVersion" }
+
+# BCrypt 验密
+quarkus-elytron-security-common = { module = "io.quarkus:quarkus-elytron-security-common" }
+
+[plugins]
+# Quarkus Gradle 插件
+quarkus = { id = "io.quarkus", version.ref = "quarkus-platform" }

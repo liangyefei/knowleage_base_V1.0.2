@@ -1,0 +1,54 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: haisi-rag-ingestion
+  namespace: default
+  uid: 3175d892-ff76-450b-8a96-abc682195033
+  resourceVersion: '1811872'
+  creationTimestamp: '2026-09-24T09:20:51Z'
+  labels:
+    app: haisi-rag-ingestion
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: v1
+      time: '2026-09-24T09:20:51Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:labels:
+            .: {}
+            f:app: {}
+        f:spec:
+          f:internalTrafficPolicy: {}
+          f:ports:
+            .: {}
+            k:{"port":47860,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+          f:selector: {}
+          f:sessionAffinity: {}
+          f:type: {}
+  annotations: {}
+spec:
+  ports:
+    - name: cce-service-0
+      protocol: TCP
+      port: 47860
+      targetPort: 7861
+  selector:
+    app: haisi-rag-ingestion
+  clusterIP: 10.247.69.120
+  clusterIPs:
+    - 10.247.69.120
+  type: ClusterIP
+  sessionAffinity: None
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  internalTrafficPolicy: Cluster
+status:
+  loadBalancer: {}

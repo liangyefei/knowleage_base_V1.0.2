@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# list-projects: show all indexed projects across CBM and codegraph.
+#
+# Usage:
+#   list-projects
+
+set -euo pipefail
+
+CBM_BIN=/opt/codebase-memory-mcp/build/c/codebase-memory-mcp
+
+echo "═══════════════════════════════════════════════════════════════════════"
+echo "  CBM projects (SQLite knowledge graph)"
+echo "═══════════════════════════════════════════════════════════════════════"
+
+"$CBM_BIN" cli --json list_projects 2>/dev/null | python3 -c "
+import sys, json
+try:
+    obj = json.load(sys.stdin)
+    projects = obj.get('structuredContent', {}).get('projects', [])
+    if not projects:
+        print('  (none)')
+    else:
+        print(f\"  {'name':<40} {'nodes':>8}  {'edges':>8}  {'size':>7}  root_path\")
+        for p in sorted(projects, key=lambda x: x.get('name', '')):
+            size_mb = p.get('size_bytes', 0) // (1024 * 1024)
+            name = p.get('name', '?')
+            nodes = p.get('nodes', '?')
+            edges = p.get('edges', '?')
+            root = p.get('root_path', '?')
+            print(f\"  {name:<40} {nodes:>8}  {edges:>8}  {size_mb:>5}MB  {root}\")
+except Exception as e:
+    print(f'  (parse error: {e})')
+"
+
+echo ""
+echo "═══════════════════════════════════════════════════════════════════════"
+echo "  codegraph projects (on-disk .codegraph/ directories)"
+echo "═══════════════════════════════════════════════════════════════════════"
+
+found_any=0
+for p in /opt/codebase-memory-mcp /opt/codegraph /projects/*; do
+  [ -d "$p/.codegraph" ] || continue
+  found_any=1
+  name="$(basename "$p")"
+  if [ -S "$p/.codegraph/daemon.sock" ]; then
+    daemon="daemon UP"
+  else
+    daemon="daemon DOWN"
+  fi
+  if [ -f "$p/.codegraph/codegraph.db" ]; then
+    db_size=$(du -sh "$p/.codegraph/codegraph.db" 2>/dev/null | awk '{print $1}')
+  else
+    db_size="no-db"
+  fi
+  printf "  %-40s db=%-8s %s\n" "$name" "$db_size" "$daemon"
+done
+[ "$found_any" -eq 0 ] && echo "  (none)"
+
+echo ""
+echo "═══════════════════════════════════════════════════════════════════════"
+echo "  Service status"
+echo "═══════════════════════════════════════════════════════════════════════"
+
+# CBM daemon
+cbm_status=$("$CBM_BIN" daemon status 2>&1 | head -1 || echo "(unknown)")
+echo "  CBM daemon:    ${cbm_status}"
+
+# NL server
+if curl -sf http://localhost:${NL_PORT:-9788}/health >/dev/null 2>&1; then
+  echo "  CBM NL HTTP:   UP (port ${NL_PORT:-9788})"
+else
+  echo "  CBM NL HTTP:   DOWN"
+fi
+
+# codegraph daemons count
+cg_count=0
+for pid in /proc/[0-9]*; do
+  [ -r "$pid/cmdline" ] || continue
+  cmd="$(tr "\0" " " < "$pid/cmdline" 2>/dev/null)"
+  case "$cmd" in *codegraph*serve*--mcp*) cg_count=$((cg_count+1)) ;; esac
+done
+echo "  codegraph MCP daemons: ${cg_count}"

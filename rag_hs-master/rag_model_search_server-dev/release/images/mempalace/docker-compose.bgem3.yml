@@ -1,0 +1,53 @@
+# MemPalace REST adapter — GPU + BGE-M3 form (compose).
+#
+# Runs the `haisi-mempalace:rest-bgem3` image (the upstream `open_source/mempalace/Dockerfile.rest.bgem3`
+# layered on top of the `haisi-mempalace:rest` image built by this directory's
+# Dockerfile). BGE-M3 (1024d, strong on CJK) runs on CUDA via a cu128 torch
+# wheel (Blackwell sm_120 kernels). No build stanza here — the image must be
+# pre-built by `./build.sh --gpu`.
+#
+# Prereqs (all required):
+#   1. ./build.sh --gpu          # builds haisi-mempalace:rest (this Dockerfile) then
+#                                 # layers Dockerfile.rest.bgem3 → haisi-mempalace:rest-bgem3
+#                                 # (also requires the manually-downloaded cu128
+#                                 # torch wheel in open_source/mempalace/wheels/, ~782MB)
+#   2. NVIDIA Container Toolkit  # on the host, so docker can pass --gpus all
+#                                 # (verify: nvidia-smi inside a test container)
+#   3. /disk/models/bge-m3       # the BGE-M3 model files (~2.3GB) on the host,
+#                                 # bind-mounted read-only at /models/bge-m3
+#
+# Usage:
+#   docker compose -f docker-compose.bgem3.yml up -d
+#   docker compose -f docker-compose.bgem3.yml logs -f mempalace-rest
+#   docker compose -f docker-compose.bgem3.yml down
+#
+# Auth posture:
+#   Mirrors docker-compose.yml: trusted-LAN no-auth by default. To require a
+#   bearer token, set MEMPALACE_REST_TOKEN via .env and delete the NO_AUTH line.
+
+services:
+  mempalace-rest:
+    image: haisi-mempalace:rest-bgem3
+    container_name: mempalace-rest
+    restart: unless-stopped
+    ports:
+      - "8777:8777"
+    volumes:
+      - mempalace-data:/data
+      - /disk/models/bge-m3:/models/bge-m3:ro
+    environment:
+      MEMPALACE_REST_HOST: "0.0.0.0"
+      MEMPALACE_REST_NO_AUTH: "1"
+      MEMPALACE_EMBEDDING_MODEL: "bgem3"
+      MEMPALACE_BGE_M3_PATH: "/models/bge-m3"
+      MEMPALACE_EMBEDDING_DEVICE: "cuda"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: ["gpu"]
+
+volumes:
+  mempalace-data:

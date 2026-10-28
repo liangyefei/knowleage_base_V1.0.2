@@ -1,0 +1,64 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: memmachine-neo4j
+  namespace: default
+  uid: 5d5afcc1-d4db-430e-829a-1a63c8201e39
+  resourceVersion: '1804988'
+  creationTimestamp: '2026-09-24T09:06:18Z'
+  labels:
+    app: memmachine-neo4j
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: v1
+      time: '2026-09-24T09:06:18Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:labels:
+            .: {}
+            f:app: {}
+        f:spec:
+          f:internalTrafficPolicy: {}
+          f:ports:
+            .: {}
+            k:{"port":7474,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+            k:{"port":7687,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+          f:selector: {}
+          f:sessionAffinity: {}
+          f:type: {}
+  annotations: {}
+spec:
+  ports:
+    - name: cce-service-0
+      protocol: TCP
+      port: 7474
+      targetPort: 7474
+    - name: cce-service-1
+      protocol: TCP
+      port: 7687
+      targetPort: 7687
+  selector:
+    app: memmachine-neo4j
+  clusterIP: 10.247.54.20
+  clusterIPs:
+    - 10.247.54.20
+  type: ClusterIP
+  sessionAffinity: None
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  internalTrafficPolicy: Cluster
+status:
+  loadBalancer: {}

@@ -1,0 +1,177 @@
+# 服务器配置文件
+# 包含 API、WebUI、Redis、MemMachine、MemPalace 等服务配置
+
+# ==================== 超时配置 ====================
+# httpx 请求默认超时时间（秒）
+HTTPX_DEFAULT_TIMEOUT: 500.0
+
+# ==================== 跨域配置 ====================
+# API 是否开启跨域
+OPEN_CROSS_DOMAIN: true
+
+# ==================== 服务间调用配置 ====================
+# QA 服务调用 Ingestion 服务的 API 地址（双镜像拆分模式）
+# 单 Pod 部署（all 模式）不设置此项，退化为 base_url
+INGESTION_API_URL: "http://haisi-rag-ingestion:7861/kw"
+
+# ==================== 服务器端口配置 ====================
+# WebUI 服务器配置
+WEBUI_SERVER:
+  host: "0.0.0.0"  # Windows 下自动变为 127.0.0.1
+  port: 8501
+
+# API 服务器配置
+API_SERVER:
+  host: "0.0.0.0"
+  port: 7861
+  public_host: "192.168.80.250"
+  public_port: 16608
+  # uvicorn worker 进程数。
+  # fork 启动方式下子进程共享父进程内存（写时复制），多 worker 内存占用小。
+  # I/O 密集型（embedding/LLM 都是 API 调用）建议 2~4，CPU 24 核下 4 足够；再多收益递减。
+  workers: 4
+  # 并发上限（背压保护，防止打满 FD / 连接）
+  limit_concurrency: 1000
+  # TCP backlog
+  backlog: 2048
+  # HTTP keep-alive 超时（秒），长连接压测友好
+  timeout_keep_alive: 300
+
+# FastChat Model Worker 服务器配置
+FSCHAT_MODEL_WORKERS:
+  # 默认配置
+  default:
+    host: "0.0.0.0"
+    port: 20002
+    device: "cuda"
+    infer_turbo: false
+
+  # ChatGLM3 配置
+  chatglm3-6b:
+    device: "cuda"
+
+  # Qwen 配置
+  Qwen1.5-0.5B-Chat:
+    device: "cuda"
+
+  # 在线模型端口配置
+  zhipu-api:
+    port: 21001
+  minimax-api:
+    port: 21002
+  xinghuo-api:
+    port: 21003
+  qianfan-api:
+    port: 21004
+  fangzhou-api:
+    port: 21005
+  qwen-api:
+    port: 21006
+  baichuan-api:
+    port: 21007
+  azure-api:
+    port: 21008
+  tiangong-api:
+    port: 21009
+  gemini-api:
+    port: 21010
+  vllms-api:
+    port: 21011
+  chatglm3-api:
+    port: 21012
+  chatglm3cpp-api:
+    port: 21013
+  ollama-api:
+    port: 21014
+
+# ==================== Redis 配置 ====================
+# 后端要处理消息的redis地址
+# COMM_REDIS_ADDRESS:
+#   host: "192.168.80.250"
+#   port: 16379
+#   password: "farai123"
+#   database: 8
+#   stream_key: "knowledge-stream"  # 《知识库信息同步说明文档V1.0.docx》中指定的key值
+
+# ==================== Kafka 配置（DMS Kafka 消息队列） ====================
+# 后端已从 Redis Stream 迁移到华为云 DMS Kafka，模型端 comm 模块对接
+# 出站 topic (Backend -> Model): kb-document-processing, 16 分区, key=kbId
+# 入站 topic (Model -> Backend): kb-document-processed, 8 分区, key=documentId
+COMM_KAFKA_ADDRESS:
+  # 生产/测试环境：华为云 DMS Kafka（k8s 内网三节点集群）
+  bootstrap_servers: "192.168.0.190:9092,192.168.0.136:9092,192.168.0.28:9092"
+  # 本地无 Kafka 环境时，可临时切换为本地容器：haisi-kafka-dev:9092
+  # 启动本地 Kafka：bash release/images/kafka-setup.sh（需先将模型容器接入 kafka-net）
+  group_id: "model-service"  # 消费者组，与后端约定
+  topic_processing: "kb-document-processing-release"  # 消费 topic（Backend -> Model）
+  topic_processed: "kb-document-processed-release"    # 回调 topic（Model -> Backend）
+  consumer_workers: 1  # 新架构下已废弃（并行来自 engine worker pool，1 poller 即可），保留向后兼容，>1 会 WARNING
+  shutdown_timeout_ms: 7200000  # 优雅停止超时（ms），略大于单条最长处理时间 90 分钟 + 余量
+  poll_max_records: 32              # 单次 poll 最多拉多少条消息
+  doc_worker_pool_size: 4          # 文档并行 worker 数（跨文件并行度）
+  control_worker_pool_size: 1       # 控制车道 worker 数（KB 生命周期事件，建议 1 保持串行）
+  vlm_concurrency_limit: 4           # VLM OCR 调用并发上限（Semaphore，保护 VLM 服务；8GB 容器限 4 防 OOM）
+  commit_strategy: "per_partition_completed"  # offset 提交策略：按分区跟踪已完成 offset 连续推进
+  callback_max_retries: 5              # 回调投递最大重试次数：同一条消息回调投递失败达该次数后，强制推进 offset + 死信日志，打破"回调永久失败 → at-least-once 无限重投递 → 每轮重跑 task.run"的死循环。设 0 退化为纯 at-least-once（永不强制推进，不推荐）
+  callback_send_timeout_ms: 10000     # 回调投递同步等 ACK 超时（ms），事务化后用于 send future.get(timeout)，超时则事务 abort + 重投递
+  # 华为云 DMS Kafka SASL_SSL 认证（生产环境启用，本地开发注释掉）
+  # sasl_ssl:
+  #   mechanism: "PLAIN"
+  #   username: "your-username"
+  #   password: "your-password"
+  #   security_protocol: "SASL_SSL"
+
+# ==================== SFS 文件存储挂载路径 ====================
+# 后端写文件与模型端读文件共享同一 SFS 卷，消息中 filePath 为相对路径（kb/{kbId}/{categoryId}/{filename}）
+# 模型端按此配置拼接为本地绝对路径
+# 开发环境：Windows D 盘在 WSL 挂载为 /mnt/d/data/release/kb-files，SFS 根对应 /kb-files
+# 生产环境：CCE 多实例共享挂载同一 SFS 卷，填实际挂载点，和后端对接一致
+SFS_MOUNT_PATH: "/kb-files"
+
+# ==================== MemMachine 配置 ====================
+# MemMachine 长期记忆服务（部署在 105 服务器 192.168.80.250）
+# 容器 memmachine-app，端口 8080:8080（宿主:容器），镜像 memmachine/memmachine
+# 依赖：memmachine-postgres（pgvector:pg16，5432）+ memmachine-neo4j（5.23-community，7474/7687）
+# LLM/Embedding：智谱 GLM + 阿里云 DashScope（OpenAI 兼容），凭据见 release/images/memmachine/.env
+# 集成到知识库聊天：检索时查记忆增强 context，回答后存对话记忆（跨会话积累）
+# ID 映射：org_id 固定 farai_org / project_id = knowledge_base_name / user_id = user_name
+# 客户端封装见 server/memory/memmachine_client.py，全部容错（失败仅 warning，不影响聊天）
+# 部署方式见 release/images/memmachine/MemMachine.md
+MEMMACHINE_BASE_URL: "http://192.168.80.250:8080"
+MEMMACHINE_ORG_ID: "farai_org"
+MEMMACHINE_TOP_K: 5
+MEMMACHINE_PROJECT_ID: "haisi_rag_user_profile"
+MEMMACHINE_EXTRACT_ENABLED: true  # 每轮问答后后台抽取写入（与注入开关 ENABLED 分离）
+MEMMACHINE_ENABLED: true  # 总开关：false 则跳过查/存，对聊天零影响
+
+# ==================== MemPalace 配置 ====================
+# MemPalace 文档 verbatim 检索服务（部署在 105 服务器 192.168.80.250，CPU 模式）
+# 容器 mempalace-rest，端口 8777:8777，镜像 haisi-mempalace:rest（./build.sh 无参构建）
+# Embedding：默认 minilm（384d 英文）；中文推荐 .env 设 MEMPALACE_EMBEDDING_MODEL=embeddinggemma（384d 多语言）
+# 鉴权：内网免鉴权（MEMPALACE_REST_NO_AUTH=1）；公网需设 MEMPALACE_REST_TOKEN 并删 NO_AUTH 行
+# 多路检索的一路：上传文档 verbatim 双写 MemPalace，检索时召回并入 local_context 由 reranker 重排
+# 客户端封装见 server/memory/mempalace_client.py，全部容错（失败仅 warning，不影响聊天）
+# 部署方式见 release/images/mempalace/MemPalace部署文档.md
+MEMPALACE_BASE_URL: "http://haisi-mempalace-rest:8777"
+MEMPALACE_TOP_K: 5
+MEMPALACE_ENABLED: true  # 总开关：false 则跳过双写/召回，对聊天零影响
+# 短超时（秒）：服务不可用时快速失败，避免 gather 等满 30s 拖垮主链路
+MEMPALACE_TIMEOUT: 3.0
+# 连续失败达到阈值后打开熔断，cooldown 期内直接跳过检索
+MEMPALACE_FAIL_THRESHOLD: 3
+# 熔断打开后的冷却时间（秒），期间不再向 mempalace 发请求
+MEMPALACE_COOLDOWN: 60.0
+# RAG 上下文预算（chars）：影响进 LLM 的 prompt 大小，进而影响 TTFT prefill 时延
+RAG_CONTEXT_BUDGET: 8192
+# 历史对话 assistant 消息截断系数（相对 RAG_CONTEXT_BUDGET），0.3 ≈ 2457 chars
+RAG_HISTORY_BUDGET_RATIO: 0.3
+# 历史对话总长度上限系数（相对 RAG_CONTEXT_BUDGET），超出则倒序保留最近的历史
+RAG_HISTORY_TOTAL_BUDGET_RATIO: 0.2
+
+# ==================== LAC 分词服务配置 ====================
+# LAC 中文分词服务（独立容器 haisi-lac → 宿主 5955）
+# 知识库查询关键词抽取：对用户 Query 分词 + 词性标注，提取 LOC/PER/ORG/n/v/nz/nw/vn/TIME 等关键词增强召回
+# 主进程通过 HTTP 调用该微服务，无需安装 paddlepaddle / paddlenlp / LAC
+# 部署方式见 release/images/lac/LAC部署文档.md
+LAC_SERVICE_BASE_URL: "http://haisi-lac-service:5955"
+

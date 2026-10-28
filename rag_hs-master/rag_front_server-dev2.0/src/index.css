@@ -1,0 +1,325 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* ===== Light theme (default) ===== */
+:root {
+  --button-outline: rgba(0,0,0, .10);
+  --badge-outline: rgba(0,0,0, .05);
+  --opaque-button-border-intensity: -8;
+  --elevate-1: rgba(0,0,0, .03);
+  --elevate-2: rgba(0,0,0, .08);
+
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(220 45% 25%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(218 40% 18%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(218 40% 18%);
+  --primary: hsl(221 83% 53%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(210 25% 96%);
+  --secondary-foreground: hsl(218 40% 22%);
+  --muted: hsl(210 20% 96%);
+  --muted-foreground: hsl(216 12% 45%);
+  --accent: hsl(210 30% 94%);
+  --accent-foreground: hsl(221 70% 38%);
+  --info: hsl(221 80% 55%);
+  --info-foreground: hsl(0 0% 100%);
+  --destructive: hsl(0 72% 51%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --success: hsl(152 60% 38%);
+  --success-foreground: hsl(0 0% 100%);
+  --warning: hsl(38 90% 50%);
+  --warning-foreground: hsl(0 0% 100%);
+  --border: hsl(216 15% 90%);
+  --input: hsl(216 15% 90%);
+  --ring: hsl(221 83% 53%);
+  --chart-1: hsl(221 83% 53%);
+  --chart-2: hsl(180 45% 42%);
+  --chart-3: hsl(38 90% 50%);
+  --chart-4: hsl(152 60% 38%);
+  --chart-5: hsl(280 35% 55%);
+  --sidebar: hsl(0 0% 100%);
+  --sidebar-foreground: hsl(218 40% 20%);
+  --sidebar-primary: hsl(221 83% 53%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(210 30% 94%);
+  --sidebar-accent-foreground: hsl(221 70% 38%);
+  --sidebar-border: hsl(216 15% 90%);
+  --sidebar-ring: hsl(221 83% 53%);
+
+  /* ===== Frontend tokens (warm paper theme) ===== */
+  --frontend-bg: hsl(0 0% 98%);
+  --frontend-surface: hsl(0 0% 100%);
+  --frontend-fg: hsl(220 45% 25%);
+  --frontend-muted: hsl(216 12% 45%);
+  --frontend-subtle: hsl(214 18% 67%);
+  --frontend-accent: hsl(221 83% 53%);
+  --frontend-accent-light: hsl(221 70% 45%);
+  --frontend-border: hsl(216 15% 90%);
+  --frontend-input-border: hsl(216 12% 88%);
+  --frontend-input-bg: hsl(210 20% 97%);
+  --frontend-link: hsl(221 83% 53%);
+  --frontend-gray: hsl(216 12% 88%);
+
+  --font-sans: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Source Code Pro', monospace;
+  --radius: 0.75rem;
+  --shadow-2xs: 0px 2px 12px 0px hsl(0 0% 0% / 0.01);
+  --shadow-xs: 0px 2px 12px 0px hsl(0 0% 0% / 0.01);
+  --shadow-sm: 0px 2px 12px 0px hsl(0 0% 0% / 0.02), 0px 1px 2px -1px hsl(0 0% 0% / 0.02);
+  --shadow: 0px 2px 12px 0px hsl(0 0% 0% / 0.02), 0px 1px 2px -1px hsl(0 0% 0% / 0.02);
+  --shadow-md: 0px 2px 12px 0px hsl(0 0% 0% / 0.02), 0px 2px 4px -1px hsl(0 0% 0% / 0.02);
+  --shadow-lg: 0px 2px 12px 0px hsl(0 0% 0% / 0.02), 0px 4px 6px -1px hsl(0 0% 0% / 0.02);
+  --shadow-xl: 0px 2px 12px 0px hsl(0 0% 0% / 0.02), 0px 8px 10px -1px hsl(0 0% 0% / 0.02);
+  --shadow-2xl: 0px 2px 12px 0px hsl(0 0% 0% / 0.05);
+}
+
+/* ===== Dark theme ===== */
+.dark {
+  --background: hsl(220 25% 10%);
+  --foreground: hsl(40 15% 90%);
+  --card: hsl(220 22% 13%);
+  --card-foreground: hsl(40 15% 90%);
+  --popover: hsl(220 22% 13%);
+  --popover-foreground: hsl(40 15% 90%);
+  --primary: hsl(210 80% 62%);
+  --primary-foreground: hsl(220 25% 10%);
+  --secondary: hsl(220 18% 18%);
+  --secondary-foreground: hsl(40 15% 85%);
+  --muted: hsl(220 18% 16%);
+  --muted-foreground: hsl(218 15% 68%);
+  --accent: hsl(218 25% 20%);
+  --accent-foreground: hsl(210 80% 70%);
+  --info: hsl(210 70% 60%);
+  --info-foreground: hsl(220 25% 10%);
+  --destructive: hsl(0 60% 55%);
+  --destructive-foreground: hsl(40 15% 90%);
+  --success: hsl(150 40% 48%);
+  --success-foreground: hsl(220 25% 10%);
+  --warning: hsl(38 75% 55%);
+  --warning-foreground: hsl(220 25% 10%);
+  --border: hsl(220 15% 22%);
+  --input: hsl(220 15% 22%);
+  --ring: hsl(210 80% 62%);
+  --chart-1: hsl(210 80% 62%);
+  --chart-2: hsl(180 40% 50%);
+  --chart-3: hsl(38 75% 55%);
+  --chart-4: hsl(150 40% 48%);
+  --chart-5: hsl(280 30% 58%);
+  --sidebar: hsl(220 22% 12%);
+  --sidebar-foreground: hsl(40 15% 90%);
+  --sidebar-primary: hsl(210 80% 62%);
+  --sidebar-primary-foreground: hsl(220 25% 10%);
+  --sidebar-accent: hsl(218 25% 20%);
+  --sidebar-accent-foreground: hsl(210 80% 70%);
+  --sidebar-border: hsl(220 15% 20%);
+  --sidebar-ring: hsl(210 80% 62%);
+
+  /* ===== Frontend tokens (dark) ===== */
+  --frontend-bg: hsl(220 15% 8%);
+  --frontend-surface: hsl(220 15% 11%);
+  --frontend-fg: hsl(40 20% 90%);
+  --frontend-muted: hsl(218 20% 72%);
+  --frontend-subtle: hsl(218 15% 62%);
+  --frontend-accent: hsl(210 80% 68%);
+  --frontend-accent-light: hsl(210 70% 76%);
+  --frontend-border: hsl(220 12% 26%);
+  --frontend-input-border: hsl(220 12% 30%);
+  --frontend-input-bg: hsl(220 15% 13%);
+  --frontend-link: hsl(217 80% 68%);
+  --frontend-gray: hsl(220 12% 30%);
+}
+
+/* ===== Tailwind v4 Theme Hook ===== */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-frontend-bg: var(--frontend-bg);
+  --color-frontend-surface: var(--frontend-surface);
+  --color-frontend-fg: var(--frontend-fg);
+  --color-frontend-muted: var(--frontend-muted);
+  --color-frontend-subtle: var(--frontend-subtle);
+  --color-frontend-accent: var(--frontend-accent);
+  --color-frontend-accent-light: var(--frontend-accent-light);
+  --color-frontend-border: var(--frontend-border);
+  --color-frontend-input-border: var(--frontend-input-border);
+  --color-frontend-input-bg: var(--frontend-input-bg);
+  --color-frontend-link: var(--frontend-link);
+  --color-frontend-gray: var(--frontend-gray);
+
+  --font-sans: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Source Code Pro', monospace;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+}
+
+/* ===== Typography ===== */
+@plugin "@tailwindcss/typography";
+
+html, body, #app {
+  height: 100%;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+@utility prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-lead: var(--muted-foreground);
+  --tw-prose-links: var(--primary);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-counters: var(--muted-foreground);
+  --tw-prose-bullets: var(--primary);
+  --tw-prose-hr: var(--border);
+  --tw-prose-quotes: var(--foreground);
+  --tw-prose-quote-borders: var(--border);
+  --tw-prose-captions: var(--muted-foreground);
+  --tw-prose-kbd: var(--foreground);
+  --tw-prose-code: var(--foreground);
+  --tw-prose-pre-code: var(--accent-foreground);
+  --tw-prose-pre-bg: var(--accent);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
+  --tw-prose-invert-body: var(--foreground);
+  --tw-prose-invert-headings: var(--foreground);
+  --tw-prose-invert-links: var(--primary);
+  --tw-prose-invert-bold: var(--foreground);
+  --tw-prose-invert-counters: var(--muted-foreground);
+  --tw-prose-invert-bullets: var(--primary);
+  --tw-prose-invert-hr: var(--border);
+  --tw-prose-invert-quotes: var(--foreground);
+  --tw-prose-invert-quote-borders: var(--border);
+  --tw-prose-invert-captions: var(--muted-foreground);
+  --tw-prose-invert-code: var(--foreground);
+  --tw-prose-invert-pre-code: var(--accent-foreground);
+  --tw-prose-invert-pre-bg: var(--accent);
+  --tw-prose-invert-th-borders: var(--border);
+  --tw-prose-invert-td-borders: var(--border);
+}
+
+/* ===== Elevate system (from original) ===== */
+@layer utilities {
+  input[type="search"]::-webkit-search-cancel-button {
+    @apply hidden;
+  }
+
+  [contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: var(--muted-foreground);
+    pointer-events: none;
+  }
+
+  .no-default-hover-elevate {}
+  .no-default-active-elevate {}
+
+  .toggle-elevate::before,
+  .toggle-elevate-2::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    border-radius: inherit;
+    z-index: -1;
+  }
+
+  .toggle-elevate.toggle-elevated::before {
+    background-color: var(--elevate-2);
+  }
+
+  .border.toggle-elevate::before {
+    inset: -1px;
+  }
+
+  :where(.hover-elevate:not(.no-default-hover-elevate)),
+  :where(.active-elevate:not(.no-default-active-elevate)),
+  :where(.hover-elevate-2:not(.no-default-hover-elevate)),
+  :where(.active-elevate-2:not(.no-default-active-elevate)) {
+    position: relative;
+    z-index: 0;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate)::after,
+  .active-elevate:not(.no-default-active-elevate)::after,
+  .hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:not(.no-default-active-elevate)::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    border-radius: inherit;
+    z-index: 999;
+  }
+
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-1);
+  }
+
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-2);
+  }
+
+  .border.hover-elevate:not(.no-default-hover-elevate)::after,
+  .border.active-elevate:not(.no-default-active-elevate)::after,
+  .border.hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .border.active-elevate-2:not(.no-default-active-elevate)::after {
+    inset: -1px;
+  }
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background-color: hsl(220 12% 80%); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background-color: hsl(220 12% 65%); }
+.dark ::-webkit-scrollbar-thumb { background-color: hsl(215 10% 35%); }
+.dark ::-webkit-scrollbar-thumb:hover { background-color: hsl(215 10% 48%); }

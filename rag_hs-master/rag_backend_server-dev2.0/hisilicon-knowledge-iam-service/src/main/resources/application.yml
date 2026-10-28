@@ -1,0 +1,196 @@
+quarkus:
+  log:
+    console:
+      enabled: true
+      format: "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%t] traceId=%X{traceId} %c.%M %s%e%n"
+  http:
+    auth:
+      proactive: false
+      # OneAccess OIDC 路径的 HTTP 权限策略（quarkus-oidc 在 OIDC_TENANT_ENABLED=true 时生效）：
+      # - 登录入口必须是 authenticated：未登录访问会触发 quarkus-oidc 302 到 OneAccess；
+      #   若配成 permit，@Authenticated 永远不会发起认证，登录入口就成了空转。
+      # - 回调与退出必须 permit：回调是未登录状态进入的（由 OIDC 机制自行完成 code 换 token），
+      #   退出也要能在会话失效时执行。
+      permission:
+        oidc-login:
+          paths: /oidc/login/*
+          policy: authenticated
+        oidc-callback:
+          paths: /oidc/callback/*
+          policy: permit
+        oidc-logout:
+          paths: /oidc/logout/*
+          policy: permit
+    # ⚠️ 必须与 hisilicon-knowledge-core-service 的 /hisilicon-knowledge **不同**：
+    # 生产/测试环境经华为云 APIG 接入，APIG 按**前缀**转发到 CCE 内的 Service，
+    # 若两个服务共用一个前缀，APIG 上无法只靠前缀把它们分开（只能靠更深层的 /user/**、
+    # /publicKey 细粒度规则，脆弱且每加一个端点就要改网关）。
+    # 浏览器可见路径（/hisilicon-knowledge/user/login、/hisilicon-knowledge/publicKey）
+    # 由前端 nginx / APIG 内部 rewrite 到本前缀，前端零改动。
+    root-path: /hisilicon-knowledge-iam
+    # 业务端口统一 8080（与 hisilicon-knowledge-core-service 同值）：CCE 里每个服务一个 Deployment/容器，
+    # 端口不冲突；统一 8080 让 Service / 探针 / 网关配置一致（native 镜像 EXPOSE 8080）。
+    # 本机要同时起两个服务时覆盖（优先级高于本文件）：
+    #   java -Dquarkus.http.port=8085 -Dquarkus.management.port=9006 -jar ...
+    #   或环境变量 QUARKUS_HTTP_PORT / QUARKUS_MANAGEMENT_PORT（Quarkus 自动把环境变量
+    #   映射到配置键，所以写死 8080 也照样能覆盖，已实测 8099/9099 生效）。
+    # ⚠️ -D 必须在 -jar 之前；写在后面会被当成应用参数忽略（本轮踩过）。
+    port: 8080
+    limits:
+      # 与拆分前保持一致（不做行为变更）；身份接口只有 JSON 小请求体，
+      # 后续如需收紧可单独下调，不影响 core 的文件上传上限。
+      max-body-size: 500M
+      max-form-attribute-size: 500M
+    host: 0.0.0.0
+    cors:
+      enabled: true
+      origins: ${CORS_ORIGINS:*}
+      methods: GET,HEAD,POST,PUT,DELETE,PATCH,OPTIONS
+      headers: Content-Type,Authorization,Accept,X-Requested-With
+      exposed-headers: Content-Disposition,Tus-Resumable,Upload-Offset,Upload-Length,Upload-Expires,Location,Upload-Metadata
+  # 管理接口独立端口：/q/health（当前唯一的非应用端点）从业务端口剥离到 9000（与 core 同值）。
+  # ⚠️ 只有 health：本项目没引 micrometer/metrics 扩展，:9000/q/metrics 是 404。
+  # 本机同时起两个服务时管理端口也要错开：-Dquarkus.management.port=9006（放在 -jar 之前）。
+  # 探针因此固定为 :9000/q/health，**不受本服务 root-path 影响**，也不经 APIG 暴露。
+  # ⚠️ 开启后 :8080/q/health 变成 404，CCE 探针必须改指 9000。
+  management:
+    enabled: true
+    port: 9000
+  datasource:
+    # 与 core 同一个库（schema knowledge）与同一套账号：IAM 写 users/roles/permissions 等表。
+    # 显式声明 db-kind：仅 reactive.url 不构成"已定义 datasource"，缺 db-kind 会触发
+    # PostgreSQL Dev Service（testcontainers）并探测 Docker 引擎。
+    db-kind: postgresql
+    devservices:
+      enabled: false
+    reactive:
+      max-size: 3
+      url: vertx-reactive:postgresql://127.0.0.1:5432/hisilicon_knowledge?search_path=knowledge
+      idle-timeout: PT10M
+    db-version: 18.4
+    username: hisilicon_knowledge
+    # 生产环境由 K8s Secret 注入 QUARKUS_DATASOURCE_PASSWORD 覆盖（envFrom secretRef）
+    password: ${QUARKUS_DATASOURCE_PASSWORD:123456}
+  # 全局禁用 Dev Services：datasource 已自配置，无需 testcontainers 拉容器
+  devservices:
+    enabled: false
+  hibernate-orm:
+    physical-naming-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+    # SQL 日志默认关闭（生产/测试 profile），理由见 core 同名注释（LTS 计费 / 格式化开销 /
+    # bind-parameters 把参数明文写进日志平台）。本地开发由文件末尾的 %dev 打开。
+    log:
+      sql: false
+      format-sql: false
+      bind-parameters: false
+    # 见 core 同名配置说明：jsonb 列用 Hibernate 内建 JSON mapper，需忽略全局 ObjectMapper 定制
+    mapping:
+      format:
+        global: ignore
+  redis:
+    # 令牌/会话缓存（TokenRedisRepository）。生产由 K8s Secret 注入 QUARKUS_REDIS_HOSTS
+    hosts: ${QUARKUS_REDIS_HOSTS:redis://localhost:6379/0}
+    password: ${QUARKUS_REDIS_PASSWORD:}
+    timeout: 5s
+  container-image:
+    builder: podman
+    registry: swr.cn-south-1.myhuaweicloud.com
+    group: hisilicon-rag
+  package:
+    jar:
+      enabled: false
+  native:
+    enabled: true
+    container-build: true
+    container-runtime: podman
+    # 本服务的 native 参数**故意保持最小**：身份域不抽取文档、不解压压缩包、不碰 AWT，
+    # 因此不需要 core 那套 charset 全量烘焙与 POI/PDFBox/Tika/AWT/zstd 的
+    # --initialize-at-run-time 豁免。首次 native 构建请单独验证（见 AGENTS.md）。
+  application:
+    name: hisilicon-knowledge-iam-service
+
+  # OpenTelemetry — 仅获取 traceId 注入 MDC，不导出 span
+  otel:
+    sdk:
+      disabled: false
+    traces:
+      exporter: none
+    service:
+      name: hisilicon-knowledge-iam-service
+    propagators: tracecontext
+
+  # OneAccess OIDC（华为云统一身份门户）授权码流程。
+  # - tenant-enabled 默认 false：本地/测试没有 OneAccess 租户也能启动；CCE 上显式设
+  #   OIDC_TENANT_ENABLED=true 开启（真实值由 Secret 注入，不在源码里）。
+  # - ⚠️ OneAccess 不提供 OIDC discovery（GET {auth-server-url}/.well-known/openid-configuration
+  #   返回 404，2026-10-24 实测），必须 discovery-enabled:false 并手工声明三个端点路径
+  #   （相对 auth-server-url）：/authorize、/token、/certs（JWKS，非标准路径，已实测 200）。
+  #   删掉这三行会重现 "OIDC server is not available"。
+  # - redirect-path 必须与 OneAccess 门户登记的回调地址一致（服务侧路径，不含 root-path）。
+  oidc:
+    tenant-enabled: ${OIDC_TENANT_ENABLED:false}
+    auth-server-url: ${OIDC_AUTH_SERVER_URL:}
+    client-id: ${OIDC_CLIENT_ID:}
+    credentials:
+      secret: ${OIDC_CLIENT_SECRET:}
+    discovery-enabled: false
+    authorization-path: /authorize
+    token-path: /token
+    jwks-path: /certs
+    application-type: web-app
+    authentication:
+      # ⚠️ 必须写**含 root-path 的完整对外路径**：quarkus-oidc 会把该值原样作为 redirect_uri
+      # 发给 IdP（不自动拼接 root-path），而本服务的 JAX-RS 全部挂在 root-path 下——
+      # 配成裸路径 /oidc/callback/huawei 会让 IdP 回跳到路由不到的地址（404）。
+      # OneAccess/Keycloak 侧登记的回调地址必须与该路径一致。
+      redirect-path: /hisilicon-knowledge-iam/oidc/callback/huawei
+
+  locales: en-US,zh-CN
+
+# RSA 密钥对（登录口令 RSA 解密 + JWT 签名）
+# 生产环境：公钥由 K8s ConfigMap 注入 RSA_PUBLIC_KEY，私钥由 K8s Secret 注入 RSA_PRIVATE_KEY
+# （envFrom secretRef；私钥严禁入 ConfigMap/镜像）。未配置时 PemRsaUtils 回退 classpath pem（本地开发）。
+# ⚠️ classpath 里的 privateKey.pem 只在 system 模块（即本服务）；core 既无该文件也无任何 RSA 用法。
+rsa:
+  public-key: ${RSA_PUBLIC_KEY:}
+  private-key: ${RSA_PRIVATE_KEY:}
+
+# 外部账号（OneAccess/华为账号）刷新校验用的 userinfo 端点（commons-oidc 的
+# OneAccessAccountValidator 读取）。官方接口为 https://{domain}/api/v1/oauth2/userinfo；
+# 为空时刷新校验 fail-closed（拒绝续期，要求重新登录）。
+#
+# 另两个前端跳转地址（OauthResource 读取）。⚠️ 生产必须覆盖，否则登录/登出都会把用户
+# 送到 localhost:5173（前端 dev server），用户看到"无法连接"：
+# - frontend-callback-uri：登录成功后回前端的地址（携带一次性 code，前端再换令牌）
+# - logout-redirect-uri：登出后回前端的地址（通常是登录页）
+oidc:
+  provider:
+    huawei:
+      userinfo-uri: ${HUAWEI_USERINFO_URI:}
+  logout-redirect-uri: ${OIDC_LOGOUT_REDIRECT_URI:http://localhost:5173/login}
+
+platform:
+  oauth:
+    frontend-callback-uri: ${OAUTH_FRONTEND_CALLBACK_URI:http://localhost:5173/oauth/callback}
+  # MCP 网关令牌（McpTokenCommandService / McpTokenQueryService 读取）。
+  # gateway-url 必须是**含 root-path 的完整 MCP 端点**，前端拿它直填 mcpServers.url；
+  # 生产经 APIG 接入时改成对外域名，否则客户端会去连容器内的 localhost。
+  # quota-default-* 应与网关 mcp-gateway.quota.* 保持一致：IAM 只在展示/判定时用它，
+  # 真正生效的上限由网关读取（账号级覆盖写 Redis mcp:quota:{username}，两侧共同口径）。
+  mcp-token:
+    expire-days: ${MCP_TOKEN_EXPIRE_DAYS:30}
+    gateway-url: ${MCP_GATEWAY_URL:http://localhost:8080/hisilicon-knowledge-mcp/mcp}
+    server-name: ${MCP_SERVER_NAME:hisilicon-knowledge}
+    quota-default-calls: ${MCP_QUOTA_DAILY_CALLS:2000}
+    quota-default-chars: ${MCP_QUOTA_DAILY_CHARS:20000000}
+
+# dev profile（quarkusDev 默认激活）：本地才打开 Hibernate SQL 日志。
+# 生产/测试 profile 不吃这段 —— "在外挂 ConfigMap 里删掉 hibernate-orm 段"不会关掉 SQL 日志，
+# 外挂配置是**叠加**语义，删掉只是回落到本文件的值（此处已改为 false）。
+"%dev":
+  quarkus:
+    hibernate-orm:
+      log:
+        sql: true
+        format-sql: true
+        bind-parameters: true
+

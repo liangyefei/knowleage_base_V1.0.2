@@ -1,0 +1,63 @@
+# Gradle
+.gradle/
+build/
+
+# Eclipse
+.project
+.classpath
+.settings/
+bin/
+
+# IntelliJ
+.idea
+*.ipr
+*.iml
+*.iws
+
+# NetBeans
+nb-configuration.xml
+
+# Visual Studio Code
+.vscode
+.factorypath
+
+# OSX
+.DS_Store
+
+# Vim
+*.swp
+*.swo
+
+# patch
+*.orig
+*.rej
+
+# Local environment
+.env
+
+# Plugin directory
+/.quarkus/cli/plugins/
+# TLS Certificates
+.certs/
+
+.gh
+.gradle-home
+.agent-teams
+.tmp-test
+.acl-recovery
+.build-dsh
+.gradle-dsh
+.gradle-home
+.proj-cache
+.t2-verify
+.dsh-gradle-build
+
+# OIDC 本地验证（含真实 client secret，严禁入库）
+oidc-verify/.env.local
+oidc-verify/node_modules/
+oidc-verify/package.json
+oidc-verify/pnpm-lock.yaml
+oidc-verify/report-raw.txt
+oidc-verify/capture-fail.txt
+oidc-verify/pw-browsers/
+oidc-verify/pw-profile/

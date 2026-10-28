@@ -1,0 +1,72 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-efs-mempalace
+  namespace: default
+  uid: b65a7249-fab2-407e-9bcd-a7ef8c24d137
+  resourceVersion: '1747541'
+  creationTimestamp: '2026-09-24T06:45:02Z'
+  annotations:
+    everest.io/enterprise-project-id: '0'
+    pv.kubernetes.io/bind-completed: 'yes'
+    volume.beta.kubernetes.io/storage-provisioner: everest-csi-provisioner
+  finalizers:
+    - kubernetes.io/pvc-protection
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: v1
+      time: '2026-09-24T06:45:02Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:everest.io/enterprise-project-id: {}
+            f:volume.beta.kubernetes.io/storage-provisioner: {}
+        f:spec:
+          f:accessModes: {}
+          f:resources:
+            f:requests:
+              .: {}
+              f:storage: {}
+          f:storageClassName: {}
+          f:volumeMode: {}
+          f:volumeName: {}
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: v1
+      time: '2026-09-24T06:45:02Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            f:pv.kubernetes.io/bind-completed: {}
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: v1
+      time: '2026-09-24T06:45:02Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:status:
+          f:accessModes: {}
+          f:capacity:
+            .: {}
+            f:storage: {}
+          f:phase: {}
+      subresource: status
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Gi
+  volumeName: pv-efs-mempalace
+  storageClassName: csi-sfsturbo
+  volumeMode: Filesystem
+status:
+  phase: Bound
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 500Gi

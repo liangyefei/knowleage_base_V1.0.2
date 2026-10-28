@@ -1,0 +1,15 @@
+# codegraph build artifacts (rebuilt in Docker Stage 2)
+open_source/codegraph/node_modules/
+open_source/codegraph/dist/
+
+# Codegraph per-project indexes (created at runtime)
+**/.codegraph/
+
+# CBM build artifacts (rebuilt in Docker Stage 1)
+open_source/codebase-memory-mcp/build/c/*.o
+open_source/codebase-memory-mcp/build/c/test-runner
+open_source/codebase-memory-mcp/build/c/test-repro-runner
+open_source/codebase-memory-mcp/build/c/codebase-memory-mcp
+
+# Python caches
+**/__pycache__/

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1620" height="900" viewBox="0 0 1620 900" font-family="Microsoft YaHei, SimHei, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#37474f"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1620" height="900" fill="#ffffff"/>
+  <text x="800" y="48" font-size="31" font-weight="bold" text-anchor="middle" fill="#263238">k8s扩缩容机制</text>
+
+  <!-- 扩容 -->
+  <rect x="830" y="80" width="190" height="90" rx="10" fill="#ffffff" stroke="#37474f" stroke-width="2"/>
+  <text x="925" y="133" font-size="29" text-anchor="middle" fill="#263238">扩容</text>
+
+  <!-- pod数判断（上） -->
+  <polygon points="1430,125 1470,60 1570,60 1610,125 1570,190 1470,190" fill="#ffffff" stroke="#37474f" stroke-width="2"/>
+  <text x="1490" y="133" font-size="26" text-anchor="middle" fill="#263238">pod数判断</text>
+
+  <!-- 设置pod内存和CPU资源 -->
+  <rect x="30" y="440" width="220" height="90" rx="45" fill="#ffffff" stroke="#37474f" stroke-width="2"/>
+  <text x="140" y="478" font-size="26" text-anchor="middle" fill="#263238">设置pod内存</text>
+  <text x="140" y="508" font-size="26" text-anchor="middle" fill="#263238">和CPU资源</text>
+
+  <!-- 设置HPA（六边形） -->
+  <polygon points="400,440 660,440 700,485 660,530 400,530 360,485" fill="#ffffff" stroke="#37474f" stroke-width="2"/>
+  <text x="530" y="494" font-size="29" text-anchor="middle" fill="#263238">设置HPA</text>
+
+  <!-- 黄色说明便签 -->
+  <rect x="360" y="290" width="370" height="130" fill="#fff9c4" stroke="#f9a825" stroke-width="1.5"/>
+  <polygon points="690,290 730,290 730,320" fill="#f9e79f" stroke="#f9a825" stroke-width="1"/>
+  <text x="545" y="325" font-size="26" text-anchor="middle" fill="#37474f">1、最小pod数</text>
+  <text x="545" y="355" font-size="26" text-anchor="middle" fill="#37474f">2、最大pod数</text>
+  <text x="545" y="390" font-size="26" text-anchor="middle" fill="#37474f">3、触发阈值（cpu、内存）</text>
+
+  <!-- cpu、内存判断（中） -->
+  <polygon points="890,483 1010,408 1130,483 1010,558" fill="#ffffff" stroke="#37474f" stroke-width="2"/>
+  <text x="1010" y="492" font-size="27" text-anchor="middle" fill="#263238">cpu、内存判断</text>
+
+  <!-- pod数判断（下） -->
+  <polygon points="880,813 1010,738 1140,813 1010,888" fill="#ffffff" stroke="#37474f" stroke-width="2"/>
+  <text x="1010" y="821" font-size="27" text-anchor="middle" fill="#263238">pod数判断</text>
+
+  <!-- 缩容 -->
+  <rect x="210" y="768" width="190" height="90" rx="10" fill="#ffffff" stroke="#37474f" stroke-width="2"/>
+  <text x="305" y="821" font-size="29" text-anchor="middle" fill="#263238">缩容</text>
+
+  <!-- 连线 -->
+  <!-- 设置pod资源 -> 设置HPA -->
+  <path d="M250,485 L356,485" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <!-- 设置HPA -> cpu内存判断 -->
+  <path d="M700,485 L886,485" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <!-- 扩容 -> cpu内存判断（左上进入） -->
+  <path d="M870,170 L870,440 L893,462" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <!-- pod数判断(上) -> 扩容：小于最大pod数 -->
+  <path d="M1396,125 L1024,125" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="1210" y="115" font-size="26" text-anchor="middle" fill="#263238">小于最大pod数</text>
+  <!-- cpu内存判断 -> pod数判断(上)：大于等于阈值 -->
+  <path d="M1130,460 L1290,460 L1290,300 L1490,300 L1490,196" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="1390" y="290" font-size="26" text-anchor="middle" fill="#263238">大于等于阈值</text>
+  <!-- cpu内存判断 -> pod数判断(下)：小于阈值 -->
+  <path d="M1010,558 L1010,730" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="1022" y="640" font-size="26" fill="#263238">小于阈值</text>
+  <!-- pod数判断(下) -> 缩容：大于最小pod数 -->
+  <path d="M876,813 L404,813" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="640" y="803" font-size="26" text-anchor="middle" fill="#263238">大于最小pod数</text>
+  <!-- 缩容 -> cpu内存判断（回路） -->
+  <path d="M305,768 L305,650 L920,650 L935,540" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+</svg>

@@ -1,0 +1,325 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: memmachine-neo4j
+  namespace: default
+  uid: 3f00f19f-093f-4a13-8603-84cf215730a8
+  resourceVersion: '1802675'
+  generation: 1
+  creationTimestamp: '2026-09-24T08:59:42Z'
+  labels:
+    appgroup: ''
+    version: v1
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+    description: ''
+    workload.cce.io/swr-version: '[{"version":"Private Edition"}]'
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: apps/v1
+      time: '2026-09-24T08:59:42Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:description: {}
+            f:workload.cce.io/swr-version: {}
+          f:labels:
+            .: {}
+            f:appgroup: {}
+            f:version: {}
+        f:spec:
+          f:progressDeadlineSeconds: {}
+          f:replicas: {}
+          f:revisionHistoryLimit: {}
+          f:selector: {}
+          f:strategy:
+            f:rollingUpdate:
+              .: {}
+              f:maxSurge: {}
+              f:maxUnavailable: {}
+            f:type: {}
+          f:template:
+            f:metadata:
+              f:annotations:
+                .: {}
+                f:pod.cce.io/tags: {}
+                f:resource.cce.io/instance-type: {}
+              f:labels:
+                .: {}
+                f:app: {}
+                f:version: {}
+            f:spec:
+              f:containers:
+                k:{"name":"container-memmachine-neo4j"}:
+                  .: {}
+                  f:env:
+                    .: {}
+                    k:{"name":"NEO4J_AUTH"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"NEO4J_PLUGINS"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"NEO4J_server_bolt_listen__address"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"NEO4J_server_default__listen__address"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"NEO4J_server_http_listen__address"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"NEO4J_server_memory_heap_initial__size"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"NEO4J_server_memory_heap_max__size"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"PAAS_APP_NAME"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"PAAS_NAMESPACE"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"PAAS_PROJECT_ID"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                  f:image: {}
+                  f:imagePullPolicy: {}
+                  f:name: {}
+                  f:readinessProbe:
+                    .: {}
+                    f:failureThreshold: {}
+                    f:initialDelaySeconds: {}
+                    f:periodSeconds: {}
+                    f:successThreshold: {}
+                    f:tcpSocket:
+                      .: {}
+                      f:port: {}
+                    f:timeoutSeconds: {}
+                  f:resources:
+                    .: {}
+                    f:limits:
+                      .: {}
+                      f:cpu: {}
+                      f:memory: {}
+                    f:requests:
+                      .: {}
+                      f:cpu: {}
+                      f:memory: {}
+                  f:terminationMessagePath: {}
+                  f:terminationMessagePolicy: {}
+                  f:volumeMounts:
+                    .: {}
+                    k:{"mountPath":"/data"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                    k:{"mountPath":"/logs"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                    k:{"mountPath":"/plugins"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                    k:{"mountPath":"/var/lib/neo4j/import"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+              f:dnsPolicy: {}
+              f:imagePullSecrets:
+                .: {}
+                k:{"name":"default-secret"}: {}
+              f:restartPolicy: {}
+              f:schedulerName: {}
+              f:securityContext: {}
+              f:terminationGracePeriodSeconds: {}
+              f:tolerations: {}
+              f:volumes:
+                .: {}
+                k:{"name":"memmachine-neo4j-data"}:
+                  .: {}
+                  f:name: {}
+                  f:persistentVolumeClaim:
+                    .: {}
+                    f:claimName: {}
+                k:{"name":"vol-179024032872391920"}:
+                  .: {}
+                  f:emptyDir: {}
+                  f:name: {}
+                k:{"name":"vol-179024033983549104"}:
+                  .: {}
+                  f:emptyDir: {}
+                  f:name: {}
+                k:{"name":"vol-179024035078981686"}:
+                  .: {}
+                  f:emptyDir: {}
+                  f:name: {}
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: apps/v1
+      time: '2026-09-24T09:01:13Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            f:deployment.kubernetes.io/revision: {}
+        f:status:
+          f:availableReplicas: {}
+          f:conditions:
+            .: {}
+            k:{"type":"Available"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+            k:{"type":"Progressing"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+          f:observedGeneration: {}
+          f:readyReplicas: {}
+          f:replicas: {}
+          f:terminatingReplicas: {}
+          f:updatedReplicas: {}
+      subresource: status
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: memmachine-neo4j
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: memmachine-neo4j
+        version: v1
+      annotations:
+        pod.cce.io/tags: '{"CCE-Cluster-ID":"80d810f0-b565-11f1-8a63-0255ac100323","CCE-Namespace":"default"}'
+        resource.cce.io/instance-type: general-computing
+    spec:
+      volumes:
+        - name: memmachine-neo4j-data
+          persistentVolumeClaim:
+            claimName: memmachine-neo4j-data
+        - name: vol-179024032872391920
+          emptyDir: {}
+        - name: vol-179024033983549104
+          emptyDir: {}
+        - name: vol-179024035078981686
+          emptyDir: {}
+      containers:
+        - name: container-memmachine-neo4j
+          image: swr.cn-south-1.myhuaweicloud.com/hisilicon-rag/neo4j:5.26.4-community
+          env:
+            - name: PAAS_APP_NAME
+              value: memmachine-neo4j
+            - name: PAAS_NAMESPACE
+              value: default
+            - name: PAAS_PROJECT_ID
+              value: 57dba659283c4cfda3632e06e6f8097c
+            - name: NEO4J_AUTH
+              value: neo4j/neo4j_password
+            - name: NEO4J_PLUGINS
+              value: '["apoc","graph-data-science"]'
+            - name: NEO4J_server_memory_heap_initial__size
+              value: 512m
+            - name: NEO4J_server_memory_heap_max__size
+              value: 1G
+            - name: NEO4J_server_default__listen__address
+              value: 0.0.0.0
+            - name: NEO4J_server_bolt_listen__address
+              value: 0.0.0.0:7687
+            - name: NEO4J_server_http_listen__address
+              value: 0.0.0.0:7474
+          resources:
+            limits:
+              cpu: '2'
+              memory: 2Gi
+            requests:
+              cpu: '2'
+              memory: 2Gi
+          volumeMounts:
+            - name: memmachine-neo4j-data
+              mountPath: /data
+            - name: vol-179024032872391920
+              mountPath: /plugins
+            - name: vol-179024033983549104
+              mountPath: /logs
+            - name: vol-179024035078981686
+              mountPath: /var/lib/neo4j/import
+          readinessProbe:
+            tcpSocket:
+              port: 7687
+            initialDelaySeconds: 60
+            timeoutSeconds: 1
+            periodSeconds: 15
+            successThreshold: 1
+            failureThreshold: 20
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      imagePullSecrets:
+        - name: default-secret
+      schedulerName: default-scheduler
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+status:
+  observedGeneration: 1
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  terminatingReplicas: 0
+  conditions:
+    - type: Available
+      status: 'True'
+      lastUpdateTime: '2026-09-24T09:01:13Z'
+      lastTransitionTime: '2026-09-24T09:01:13Z'
+      reason: MinimumReplicasAvailable
+      message: Deployment has minimum availability.
+    - type: Progressing
+      status: 'True'
+      lastUpdateTime: '2026-09-24T09:01:13Z'
+      lastTransitionTime: '2026-09-24T08:59:42Z'
+      reason: NewReplicaSetAvailable
+      message: ReplicaSet "memmachine-neo4j-7847d5594c" has successfully progressed.

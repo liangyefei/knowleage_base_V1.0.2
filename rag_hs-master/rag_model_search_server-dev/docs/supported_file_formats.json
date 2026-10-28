@@ -1,0 +1,22 @@
+{
+  "pdf": [".pdf"],
+  "word": [".doc", ".docx"],
+  "excel": [".xls", ".xlsx"],
+  "ppt": [".ppt", ".pptx"],
+  "markdown": [".md"],
+  "txt": [".txt"],
+  "html": [".html", ".htm"],
+  "c": [".c", ".h"],
+  "c++": [".cpp", ".cc", ".cxx", ".hpp"],
+  "python": [".py"],
+  "typescript": [".ts", ".tsx"],
+  "arkts": [".ets", ".ts"],
+  "java": [".java"],
+  "javascript": [".js", ".mjs", ".cjs"],
+  "ini": [".ini"],
+  "dtsi": [".dts", ".dtsi", ".dtso"],
+  "xml": [".xml"],
+  "sh": [".sh"],
+  "makefile": ["Makefile", ".cmake", "CMakeLists.txt"],
+  "image": [".png", ".jpg", ".jpeg", ".bmp"]
+}

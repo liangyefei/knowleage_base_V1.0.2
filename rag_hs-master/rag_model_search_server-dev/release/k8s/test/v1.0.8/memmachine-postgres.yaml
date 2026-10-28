@@ -1,0 +1,268 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: memmachine-postgres
+  namespace: default
+  uid: 858591c8-5a3c-40eb-bd0e-f9a9c3f5ba18
+  resourceVersion: '1804080'
+  generation: 1
+  creationTimestamp: '2026-09-24T09:03:54Z'
+  labels:
+    appgroup: ''
+    version: v1
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+    description: ''
+    workload.cce.io/swr-version: '[{"version":"Private Edition"}]'
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: apps/v1
+      time: '2026-09-24T09:03:54Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:description: {}
+            f:workload.cce.io/swr-version: {}
+          f:labels:
+            .: {}
+            f:appgroup: {}
+            f:version: {}
+        f:spec:
+          f:progressDeadlineSeconds: {}
+          f:replicas: {}
+          f:revisionHistoryLimit: {}
+          f:selector: {}
+          f:strategy:
+            f:rollingUpdate:
+              .: {}
+              f:maxSurge: {}
+              f:maxUnavailable: {}
+            f:type: {}
+          f:template:
+            f:metadata:
+              f:annotations:
+                .: {}
+                f:pod.cce.io/tags: {}
+                f:resource.cce.io/instance-type: {}
+              f:labels:
+                .: {}
+                f:app: {}
+                f:version: {}
+            f:spec:
+              f:containers:
+                k:{"name":"memmachine-postgres"}:
+                  .: {}
+                  f:env:
+                    .: {}
+                    k:{"name":"PAAS_APP_NAME"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"PAAS_NAMESPACE"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"PAAS_PROJECT_ID"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"POSTGRES_DB"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"POSTGRES_PASSWORD"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"POSTGRES_USER"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                  f:image: {}
+                  f:imagePullPolicy: {}
+                  f:name: {}
+                  f:readinessProbe:
+                    .: {}
+                    f:exec:
+                      .: {}
+                      f:command: {}
+                    f:failureThreshold: {}
+                    f:periodSeconds: {}
+                    f:successThreshold: {}
+                    f:timeoutSeconds: {}
+                  f:resources:
+                    .: {}
+                    f:limits:
+                      .: {}
+                      f:cpu: {}
+                      f:memory: {}
+                    f:requests:
+                      .: {}
+                      f:cpu: {}
+                      f:memory: {}
+                  f:terminationMessagePath: {}
+                  f:terminationMessagePolicy: {}
+                  f:volumeMounts:
+                    .: {}
+                    k:{"mountPath":"/var/lib/postgresql/data"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                      f:subPath: {}
+              f:dnsPolicy: {}
+              f:imagePullSecrets:
+                .: {}
+                k:{"name":"default-secret"}: {}
+              f:restartPolicy: {}
+              f:schedulerName: {}
+              f:securityContext: {}
+              f:terminationGracePeriodSeconds: {}
+              f:tolerations: {}
+              f:volumes:
+                .: {}
+                k:{"name":"memmachine-pg-data"}:
+                  .: {}
+                  f:name: {}
+                  f:persistentVolumeClaim:
+                    .: {}
+                    f:claimName: {}
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: apps/v1
+      time: '2026-09-24T09:04:22Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            f:deployment.kubernetes.io/revision: {}
+        f:status:
+          f:availableReplicas: {}
+          f:conditions:
+            .: {}
+            k:{"type":"Available"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+            k:{"type":"Progressing"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+          f:observedGeneration: {}
+          f:readyReplicas: {}
+          f:replicas: {}
+          f:terminatingReplicas: {}
+          f:updatedReplicas: {}
+      subresource: status
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: memmachine-postgres
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: memmachine-postgres
+        version: v1
+      annotations:
+        pod.cce.io/tags: '{"CCE-Cluster-ID":"80d810f0-b565-11f1-8a63-0255ac100323","CCE-Namespace":"default"}'
+        resource.cce.io/instance-type: general-computing
+    spec:
+      volumes:
+        - name: memmachine-pg-data
+          persistentVolumeClaim:
+            claimName: memmachine-pg-data
+      containers:
+        - name: memmachine-postgres
+          image: swr.cn-south-1.myhuaweicloud.com/hisilicon-rag/pgvector:pg16
+          env:
+            - name: PAAS_APP_NAME
+              value: memmachine-postgres
+            - name: PAAS_NAMESPACE
+              value: default
+            - name: PAAS_PROJECT_ID
+              value: 57dba659283c4cfda3632e06e6f8097c
+            - name: POSTGRES_DB
+              value: memmachine
+            - name: POSTGRES_USER
+              value: memmachine
+            - name: POSTGRES_PASSWORD
+              value: memmachine_password
+          resources:
+            limits:
+              cpu: '1'
+              memory: 1Gi
+            requests:
+              cpu: '1'
+              memory: 1Gi
+          volumeMounts:
+            - name: memmachine-pg-data
+              mountPath: /var/lib/postgresql/data
+              subPath: pgdata
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - '-c'
+                - pg_isready -U memmachine -d memmachine
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      imagePullSecrets:
+        - name: default-secret
+      schedulerName: default-scheduler
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+status:
+  observedGeneration: 1
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  terminatingReplicas: 0
+  conditions:
+    - type: Available
+      status: 'True'
+      lastUpdateTime: '2026-09-24T09:04:22Z'
+      lastTransitionTime: '2026-09-24T09:04:22Z'
+      reason: MinimumReplicasAvailable
+      message: Deployment has minimum availability.
+    - type: Progressing
+      status: 'True'
+      lastUpdateTime: '2026-09-24T09:04:22Z'
+      lastTransitionTime: '2026-09-24T09:03:54Z'
+      reason: NewReplicaSetAvailable
+      message: ReplicaSet "memmachine-postgres-57bc4ccdff" has successfully progressed.

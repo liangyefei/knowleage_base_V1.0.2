@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# remove-project: delete a project's CBM + codegraph indexes and stop its
+# codegraph daemon.
+#
+# Usage:
+#   remove-project <project_name_or_path>
+#   remove-project opt-Hi3516CV610
+#   remove-project /projects/foo
+
+set -euo pipefail
+
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 <project_name_or_path>" >&2
+  echo "Run 'list-projects' to see valid project names." >&2
+  exit 1
+fi
+
+TARGET="$1"
+CBM_BIN=/opt/codebase-memory-mcp/build/c/codebase-memory-mcp
+
+# Look up project in CBM by name or root_path
+read NAME PATH_FOUND < <("$CBM_BIN" cli --json list_projects 2>/dev/null | python3 -c "
+import sys, json
+target = sys.argv[1]
+obj = json.load(sys.stdin)
+for p in obj.get('structuredContent', {}).get('projects', []):
+    if p.get('name') == target or p.get('root_path') == target:
+        print(p.get('name', ''), p.get('root_path', ''))
+        break
+" "$TARGET")
+
+if [ -z "$NAME" ]; then
+  echo "error: project '$TARGET' not found in CBM" >&2
+  echo "(it may still exist as a codegraph index; remove that manually if needed)" >&2
+  exit 1
+fi
+
+echo "[remove-project] removing ${NAME}"
+echo "[remove-project]   path: ${PATH_FOUND}"
+echo ""
+
+# ── Kill codegraph daemon for this path ─────────────────────────────────
+
+for pid in /proc/[0-9]*; do
+  [ -r "$pid/cmdline" ] || continue
+  cmd="$(tr "\0" " " < "$pid/cmdline" 2>/dev/null)"
+  case "$cmd" in
+    *codegraph*serve*--mcp*--path*"${PATH_FOUND}"*)
+      pidnum=$(basename "$pid")
+      echo "[remove-project] killing codegraph daemon pid ${pidnum}"
+      kill "$pidnum" 2>/dev/null || true
+      ;;
+  esac
+done
+
+# ── Delete from CBM ─────────────────────────────────────────────────────
+
+echo "[remove-project] CBM: deleting '${NAME}'..."
+if "$CBM_BIN" cli --json delete_project "{\"project\":\"${NAME}\"}" 2>&1 \
+    | grep -q '"isError":false\|"status"'; then
+  echo "[remove-project] CBM: deleted"
+else
+  # The above grep is conservative; show whatever was returned
+  "$CBM_BIN" cli --json delete_project "{\"project\":\"${NAME}\"}" 2>&1 | tail -3 || true
+fi
+
+# ── Delete codegraph index ──────────────────────────────────────────────
+
+if [ -d "${PATH_FOUND}/.codegraph" ]; then
+  echo "[remove-project] codegraph: removing ${PATH_FOUND}/.codegraph/"
+  rm -rf "${PATH_FOUND}/.codegraph"
+fi
+
+echo ""
+echo "[remove-project] complete"

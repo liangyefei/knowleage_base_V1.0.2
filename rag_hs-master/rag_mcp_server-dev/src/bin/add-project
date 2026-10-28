@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# add-project: register and index a new project at runtime.
+#
+# Usage:
+#   add-project <project_path>
+#   add-project /projects/my-repo
+#
+# Idempotent: skips CBM/codegraph if already indexed. Starts the codegraph
+# daemon if not already running for that project.
+
+set -euo pipefail
+
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 <project_path>" >&2
+  echo "Example: $0 /projects/my-repo" >&2
+  exit 1
+fi
+
+PATH_IN="$1"
+CBM_BIN=/opt/codebase-memory-mcp/build/c/codebase-memory-mcp
+
+export CODEGRAPH_NO_WATCHDOG=1
+
+if [ ! -d "$PATH_IN" ]; then
+  echo "error: '$PATH_IN' is not a directory" >&2
+  exit 1
+fi
+
+# Resolve to absolute path
+PATH_IN="$(cd "$PATH_IN" && pwd)"
+BASENAME="$(basename "$PATH_IN")"
+NAME="$(basename "$(dirname "$PATH_IN")")-${BASENAME}"
+
+echo "[add-project] registering ${NAME}"
+echo "[add-project]   path: ${PATH_IN}"
+echo ""
+
+# ── CBM index ───────────────────────────────────────────────────────────
+
+if "$CBM_BIN" cli --json list_projects 2>/dev/null \
+    | grep -q "\"name\":\"${NAME}\""; then
+  echo "[add-project] CBM: already indexed as ${NAME}, skipping"
+else
+  echo "[add-project] CBM: indexing (this may take a while)..."
+  if "$CBM_BIN" cli --json index_repository "{\"repo_path\":\"${PATH_IN}\"}" \
+      >/var/log/cbm-index-${NAME}.log 2>&1; then
+    echo "[add-project] CBM: indexed ${NAME}"
+  else
+    echo "[add-project] CBM: FAILED — see /var/log/cbm-index-${NAME}.log"
+    exit 2
+  fi
+fi
+
+# ── codegraph init ──────────────────────────────────────────────────────
+
+if [ -f "${PATH_IN}/.codegraph/codegraph.db" ]; then
+  echo "[add-project] codegraph: already indexed at ${PATH_IN}, skipping"
+else
+  echo "[add-project] codegraph: indexing (this may take a while)..."
+  if (cd "${PATH_IN}" && codegraph init .) \
+      >/var/log/cg-init-${BASENAME}.log 2>&1; then
+    echo "[add-project] codegraph: initialized ${BASENAME}"
+  else
+    echo "[add-project] codegraph: FAILED — see /var/log/cg-init-${BASENAME}.log"
+    exit 3
+  fi
+fi
+
+# ── Start codegraph daemon (idempotent) ─────────────────────────────────
+
+daemon_running=0
+for pid in /proc/[0-9]*; do
+  [ -r "$pid/cmdline" ] || continue
+  cmd="$(tr "\0" " " < "$pid/cmdline" 2>/dev/null)"
+  case "$cmd" in
+    *codegraph*serve*--mcp*--path*"${PATH_IN}"*) daemon_running=1; break ;;
+  esac
+done
+
+if [ "$daemon_running" -eq 1 ]; then
+  echo "[add-project] codegraph daemon for ${BASENAME} already running, skipping"
+else
+  echo "[add-project] codegraph: starting daemon"
+  codegraph serve --mcp --path "${PATH_IN}" \
+      </dev/null >/var/log/cg-${BASENAME}.log 2>&1 &
+fi
+
+echo ""
+echo "[add-project] complete"
+echo ""
+echo "CBM project name: ${NAME}"
+echo ""
+echo "Query via HTTP (from host):"
+echo "  curl -X POST http://localhost:${NL_PORT:-9788}/query \\"
+echo "    -H 'Content-Type: application/json' \\"
+echo "    -d '{\"q\":\"<keywords>\",\"project\":\"${NAME}\"}'"
+echo ""
+echo "Query via codegraph (inside container):"
+echo "  cd ${PATH_IN} && codegraph query \"<symbol>\""

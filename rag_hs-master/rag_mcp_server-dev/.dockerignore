@@ -1,0 +1,55 @@
+# Build context (repo root) optimizations.
+# Open-source code under open_source/ (codebase-memory-mcp/ and codegraph/) is
+# supposed to be in the build context (Dockerfile copies it via multi-stage
+# build). Only exclude artifacts that shouldn't be there in the first place.
+
+# Git metadata
+**/.git
+**/.gitignore
+
+# Python / Node caches
+**/__pycache__
+**/node_modules/.cache
+**/.npm
+**/.cache
+
+# Codegraph per-project indexes (regenerated at runtime)
+**/.codegraph
+
+# CBM build intermediates from prior local builds (Docker rebuilds in Stage 1)
+open_source/codebase-memory-mcp/build/c/*.o
+open_source/codebase-memory-mcp/build/c/test-runner
+open_source/codebase-memory-mcp/build/c/test-repro-runner
+open_source/codebase-memory-mcp/build/c/*.a
+
+# CBM release archives
+open_source/codebase-memory-mcp/dist/
+open_source/codebase-memory-mcp/pkg/
+
+# CBM local scratch
+open_source/codebase-memory-mcp/memlab-*.jsonl
+open_source/codebase-memory-mcp/memlab-*.log
+open_source/codebase-memory-mcp/soak-*
+open_source/codebase-memory-mcp/test-infrastructure/
+
+# CBM prebuilt binary (Stage 1 will rebuild it)
+open_source/codebase-memory-mcp/build/c/codebase-memory-mcp
+
+# Codegraph dev-only artifacts
+open_source/codegraph/__tests__/
+open_source/codegraph/.parallels
+
+# Local build residue (untracked, never part of the image)
+deploy/
+server/
+configs/
+
+# Editor / agent scratch
+**/.claude
+**/.vscode
+**/.idea
+**/.DS_Store
+
+# Don't re-include the image's own build files (already COPYed explicitly)
+Dockerfile
+.dockerignore

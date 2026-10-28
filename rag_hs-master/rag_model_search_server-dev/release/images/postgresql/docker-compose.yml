@@ -1,0 +1,57 @@
+services:
+  postgresql:
+    # 使用 SCL PostgreSQL 15 镜像（通过 Dockerfile 构建，附加时区与健康检查）
+    build: .
+    image: haisi-postgresql:15-c9s
+    # 容器名称
+    container_name: postgresql-db
+    # 自动重启策略
+    restart: unless-stopped
+    # 环境变量配置
+    environment:
+      # 普通数据库用户名
+      POSTGRESQL_USER: farai
+      # 普通用户密码（生产环境请修改）
+      POSTGRESQL_PASSWORD: farai123
+      # 默认数据库名称
+      POSTGRESQL_DATABASE: faraidb
+      # 管理员 postgres 用户密码（生产环境请修改）
+      POSTGRESQL_ADMIN_PASSWORD: farai123
+      # 时区
+      TZ: Asia/Shanghai
+      POSTGRESQL_TIMEZONE: Asia/Shanghai
+    # 端口映射 [宿主机端口]:[容器端口]
+    ports:
+      - "16602:5432"
+    # 数据持久化卷
+    volumes:
+      - postgresql_data:/var/lib/pgsql/data
+    # 网络配置
+    networks:
+      - postgresql_network
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+# 数据卷定义
+volumes:
+  postgresql_data:
+    driver: local
+
+# 网络定义
+networks:
+  postgresql_network:
+    driver: bridge

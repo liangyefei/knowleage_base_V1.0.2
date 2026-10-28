@@ -1,0 +1,64 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+docs/
+
+# Environment files (首次提交后本地修改不追踪)
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env.*.local
+
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# Editor
+.vscode/
+.cursor/
+.claude/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# Vite cache
+.vite/
+
+# Misc
+*.local
+
+# 构建版本标记（由 docs/push-image.ps1 维护，本地状态）
+.version
+
+# 参考原型 / Agent 临时目录
+reference-project/
+.agents/
+
+# 本地临时调试脚本
+*.py

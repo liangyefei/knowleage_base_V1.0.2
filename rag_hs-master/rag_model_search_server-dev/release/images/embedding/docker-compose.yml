@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  qwen3-embedding:
+    build: .
+    image: haisi-embedding:latest
+    container_name: qwen3-embedding
+    ports:
+      - "16604:16604"
+    volumes:
+      - /data/models/Qwen3-Embedding-4B:/data/models/Qwen3-Embedding-4B:ro
+      - ./cache:/app/cache
+    environment:
+      - PORT=16604
+      - MODEL_PATH=/data/models/Qwen3-Embedding-4B
+      - CUDA_VISIBLE_DEVICES=0
+      - TORCH_CUDA_ARCH_LIST=8.0;8.6;8.9;9.0
+    restart: unless-stopped
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu, compute, utility]

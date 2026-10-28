@@ -1,0 +1,51 @@
+# MemPalace REST adapter — CPU form (compose).
+#
+# Builds + runs the self-contained Dockerfile in this directory, producing the
+# `haisi-mempalace:rest` image (CPU, FastAPI + uvicorn, port 8777, /data persisted).
+#
+# Auth posture:
+#   CPU form defaults to trusted-LAN no-auth (MEMPALACE_REST_NO_AUTH=1). The
+#   adapter is fail-closed otherwise — a non-loopback bind without a token and
+#   without NO_AUTH refuses to start. To expose on a public/half-trusted net,
+#   generate a token (openssl rand -hex 32), put it in .env (see .env.example),
+#   delete the MEMPALACE_REST_NO_AUTH line below, and uncomment the TOKEN line.
+#
+# Embedding model:
+#   Default `minilm` (384d, English). For Chinese/multilingual CPU, switch to
+#   `embeddinggemma` (384d) by uncommenting MEMPALACE_EMBEDDING_MODEL. For
+#   `bgem3` (1024d, best for CJK) you need GPU — see docker-compose.bgem3.yml
+#   and `./build.sh --gpu` (requires NVIDIA Container Toolkit + the cu128
+#   torch wheel, ~2.3GB BGE-M3 model at /disk/models/bge-m3).
+#
+# Usage:
+#   docker compose up -d                          # build + start (CPU)
+#   docker compose logs -f mempalace-rest
+#   docker compose down                           # stop (keeps the volume)
+#   docker compose down -v                        # stop + WIPE palace data
+#
+# Build context is the upstream open_source/mempalace subdir (so .dockerignore + the
+# re-admitted examples/rest_adapter.py apply). The Dockerfile.rest lives
+# inside open_source/mempalace/ and layers on haisi-mempalace:latest (built first by ./build.sh).
+
+services:
+  mempalace-rest:
+    build:
+      context: ../../../open_source/mempalace
+      dockerfile: Dockerfile.rest
+    image: haisi-mempalace:rest
+    container_name: mempalace-rest
+    restart: unless-stopped
+    ports:
+      - "8777:8777"
+    volumes:
+      - mempalace-data:/data
+    environment:
+      MEMPALACE_REST_HOST: "0.0.0.0"
+      # 可信内网免鉴权（默认）；公网/半信任网络改用 token（见下行注释与 .env.example）
+      MEMPALACE_REST_NO_AUTH: "1"
+      # MEMPALACE_REST_TOKEN: "${MEMPALACE_REST_TOKEN}"
+      # 嵌入模型覆盖（默认 minilm 英文 384d；中文推荐 embeddinggemma 384d 多语言 或 bgem3 1024d 需 GPU）
+      # MEMPALACE_EMBEDDING_MODEL: "embeddinggemma"
+
+volumes:
+  mempalace-data:

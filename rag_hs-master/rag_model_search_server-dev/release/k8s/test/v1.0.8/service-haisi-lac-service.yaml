@@ -1,0 +1,54 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: haisi-lac-service
+  namespace: default
+  uid: 9a2673ea-8b4d-48c8-94bf-94640fae4ae2
+  resourceVersion: '1789052'
+  creationTimestamp: '2026-09-24T08:29:40Z'
+  labels:
+    app: haisi-lac-service
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: v1
+      time: '2026-09-24T08:29:40Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:labels:
+            .: {}
+            f:app: {}
+        f:spec:
+          f:internalTrafficPolicy: {}
+          f:ports:
+            .: {}
+            k:{"port":5955,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+          f:selector: {}
+          f:sessionAffinity: {}
+          f:type: {}
+  annotations: {}
+spec:
+  ports:
+    - name: cce-service-0
+      protocol: TCP
+      port: 5955
+      targetPort: 5955
+  selector:
+    app: haisi-lac-service
+  clusterIP: 10.247.141.7
+  clusterIPs:
+    - 10.247.141.7
+  type: ClusterIP
+  sessionAffinity: None
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  internalTrafficPolicy: Cluster
+status:
+  loadBalancer: {}

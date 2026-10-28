@@ -1,0 +1,321 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: haisi-dual-mcp
+  namespace: default
+  uid: 2afe82a9-9cce-49da-b528-7cd5456f859f
+  resourceVersion: '29922595'
+  generation: 46
+  creationTimestamp: '2026-08-14T10:00:10Z'
+  labels:
+    appgroup: ''
+    version: v1
+  annotations:
+    deployment.kubernetes.io/revision: '44'
+    description: haisi-dual-mcp部署
+    workload.cce.io/swr-version: '[{"version":"Private Edition"}]'
+  managedFields:
+    - manager: kubectl-rollout
+      operation: Update
+      apiVersion: apps/v1
+      time: '2026-08-26T08:53:33Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:spec:
+          f:template:
+            f:metadata:
+              f:annotations:
+                f:kubectl.kubernetes.io/restartedAt: {}
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: apps/v1
+      time: '2026-09-18T07:52:17Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:description: {}
+            f:workload.cce.io/swr-version: {}
+          f:labels:
+            .: {}
+            f:appgroup: {}
+            f:version: {}
+        f:spec:
+          f:progressDeadlineSeconds: {}
+          f:replicas: {}
+          f:revisionHistoryLimit: {}
+          f:selector: {}
+          f:strategy:
+            f:rollingUpdate:
+              .: {}
+              f:maxSurge: {}
+              f:maxUnavailable: {}
+            f:type: {}
+          f:template:
+            f:metadata:
+              f:annotations:
+                .: {}
+                f:pod.cce.io/tags: {}
+                f:resource.cce.io/instance-type: {}
+              f:labels:
+                .: {}
+                f:app: {}
+                f:version: {}
+            f:spec:
+              f:containers:
+                k:{"name":"dual-mcp"}:
+                  f:resources:
+                    f:requests:
+                      f:cpu: {}
+                      f:memory: {}
+              f:dnsPolicy: {}
+              f:imagePullSecrets:
+                .: {}
+                k:{"name":"default-secret"}: {}
+              f:restartPolicy: {}
+              f:schedulerName: {}
+              f:securityContext: {}
+              f:terminationGracePeriodSeconds: {}
+              f:tolerations: {}
+              f:volumes:
+                .: {}
+                k:{"name":"pvc-efs-coder"}:
+                  .: {}
+                  f:name: {}
+                  f:persistentVolumeClaim:
+                    .: {}
+                    f:claimName: {}
+                k:{"name":"pvc-kb-files"}:
+                  .: {}
+                  f:name: {}
+                  f:persistentVolumeClaim:
+                    .: {}
+                    f:claimName: {}
+    - manager: Python-urllib
+      operation: Update
+      apiVersion: apps/v1
+      time: '2026-09-23T02:34:11Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:spec:
+          f:template:
+            f:metadata:
+              f:annotations:
+                f:redeploy-timestamp: {}
+            f:spec:
+              f:containers:
+                k:{"name":"dual-mcp"}:
+                  .: {}
+                  f:env:
+                    .: {}
+                    k:{"name":"CBM_DAEMON_JOB_LIMIT"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"CBM_MAX_FILE_BYTES"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"CBM_MEM_BUDGET_MB"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"CBM_WORKERS"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                  f:image: {}
+                  f:imagePullPolicy: {}
+                  f:name: {}
+                  f:resources:
+                    .: {}
+                    f:limits:
+                      .: {}
+                      f:cpu: {}
+                      f:memory: {}
+                    f:requests: {}
+                  f:terminationMessagePath: {}
+                  f:terminationMessagePolicy: {}
+                  f:volumeMounts:
+                    .: {}
+                    k:{"mountPath":"/entrypoint.sh"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                      f:readOnly: {}
+                      f:subPath: {}
+                    k:{"mountPath":"/opt/codebase-memory-mcp/scripts/nl_query_server.py"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                      f:readOnly: {}
+                      f:subPath: {}
+                    k:{"mountPath":"/opt/mcp_stdio_bridge.py"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                      f:readOnly: {}
+                      f:subPath: {}
+                    k:{"mountPath":"/projects"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                    k:{"mountPath":"/var/lib/codebase-memory-mcp"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                      f:subPath: {}
+              f:volumes:
+                k:{"name":"dual-mcp-hotfix"}:
+                  .: {}
+                  f:configMap:
+                    .: {}
+                    f:defaultMode: {}
+                    f:name: {}
+                  f:name: {}
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: apps/v1
+      time: '2026-09-23T02:34:43Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            f:deployment.kubernetes.io/revision: {}
+        f:status:
+          f:availableReplicas: {}
+          f:conditions:
+            .: {}
+            k:{"type":"Available"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+            k:{"type":"Progressing"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+          f:observedGeneration: {}
+          f:readyReplicas: {}
+          f:replicas: {}
+          f:updatedReplicas: {}
+      subresource: status
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: haisi-dual-mcp
+      version: v1
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: haisi-dual-mcp
+        version: v1
+      annotations:
+        kubectl.kubernetes.io/restartedAt: '2026-08-26T16:53:33+08:00'
+        pod.cce.io/tags: '{"CCE-Cluster-ID":"bdab9c88-8a80-11f1-8bcd-0255ac100334","CCE-Namespace":"default"}'
+        redeploy-timestamp: 20260922-v16-doclinks
+        resource.cce.io/instance-type: general-computing
+    spec:
+      volumes:
+        - name: dual-mcp-hotfix
+          configMap:
+            name: dual-mcp-hotfix
+            defaultMode: 493
+        - name: pvc-efs-coder
+          persistentVolumeClaim:
+            claimName: pvc-efs-coder
+        - name: pvc-kb-files
+          persistentVolumeClaim:
+            claimName: pvc-kb-files
+      containers:
+        - name: dual-mcp
+          image: swr.cn-south-1.myhuaweicloud.com/hisilicon-rag/haisi-dual-mcp:v1.6
+          env:
+            - name: CBM_WORKERS
+              value: '2'
+            - name: CBM_MAX_FILE_BYTES
+              value: '8388608'
+            - name: CBM_DAEMON_JOB_LIMIT
+              value: '1'
+            - name: CBM_MEM_BUDGET_MB
+              value: '3072'
+          resources:
+            limits:
+              cpu: '2'
+              memory: 6Gi
+            requests:
+              cpu: '2'
+              memory: 6Gi
+          volumeMounts:
+            - name: pvc-kb-files
+              mountPath: /projects
+            - name: pvc-efs-coder
+              mountPath: /var/lib/codebase-memory-mcp
+              subPath: coder/codebase-memory-mcp
+            - name: dual-mcp-hotfix
+              readOnly: true
+              mountPath: /entrypoint.sh
+              subPath: entrypoint.sh
+            - name: dual-mcp-hotfix
+              readOnly: true
+              mountPath: /opt/mcp_stdio_bridge.py
+              subPath: mcp_stdio_bridge.py
+            - name: dual-mcp-hotfix
+              readOnly: true
+              mountPath: /opt/codebase-memory-mcp/scripts/nl_query_server.py
+              subPath: nl_query_server.py
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      imagePullSecrets:
+        - name: default-secret
+      schedulerName: default-scheduler
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+status:
+  observedGeneration: 46
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  conditions:
+    - type: Available
+      status: 'True'
+      lastUpdateTime: '2026-09-15T01:06:20Z'
+      lastTransitionTime: '2026-09-15T01:06:20Z'
+      reason: MinimumReplicasAvailable
+      message: Deployment has minimum availability.
+    - type: Progressing
+      status: 'True'
+      lastUpdateTime: '2026-09-23T02:34:43Z'
+      lastTransitionTime: '2026-08-20T10:38:33Z'
+      reason: NewReplicaSetAvailable
+      message: ReplicaSet "haisi-dual-mcp-55cf5cf64f" has successfully progressed.

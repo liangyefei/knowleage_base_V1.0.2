@@ -1,0 +1,270 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: haisi-dual-mcp
+  namespace: default
+  uid: 1d77b6e9-906a-40d7-8093-de69bccf8dcf
+  resourceVersion: '1811270'
+  generation: 1
+  creationTimestamp: '2026-09-24T09:19:05Z'
+  labels:
+    appgroup: ''
+    version: v1
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+    description: haisi-dual-mcp部署
+    workload.cce.io/swr-version: '[{"version":"Private Edition"}]'
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: apps/v1
+      time: '2026-09-24T09:19:05Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:description: {}
+            f:workload.cce.io/swr-version: {}
+          f:labels:
+            .: {}
+            f:appgroup: {}
+            f:version: {}
+        f:spec:
+          f:progressDeadlineSeconds: {}
+          f:replicas: {}
+          f:revisionHistoryLimit: {}
+          f:selector: {}
+          f:strategy:
+            f:rollingUpdate:
+              .: {}
+              f:maxSurge: {}
+              f:maxUnavailable: {}
+            f:type: {}
+          f:template:
+            f:metadata:
+              f:annotations:
+                .: {}
+                f:pod.cce.io/tags: {}
+                f:resource.cce.io/instance-type: {}
+              f:labels:
+                .: {}
+                f:app: {}
+                f:version: {}
+            f:spec:
+              f:containers:
+                k:{"name":"container-dual-mcp"}:
+                  .: {}
+                  f:env:
+                    .: {}
+                    k:{"name":"CBM_DAEMON_JOB_LIMIT"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"CBM_MAX_FILE_BYTES"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"CBM_MEM_BUDGET_MB"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"CBM_WORKERS"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"PAAS_APP_NAME"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"PAAS_NAMESPACE"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"PAAS_PROJECT_ID"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                  f:image: {}
+                  f:imagePullPolicy: {}
+                  f:name: {}
+                  f:resources:
+                    .: {}
+                    f:limits:
+                      .: {}
+                      f:cpu: {}
+                      f:memory: {}
+                    f:requests:
+                      .: {}
+                      f:cpu: {}
+                      f:memory: {}
+                  f:terminationMessagePath: {}
+                  f:terminationMessagePolicy: {}
+                  f:volumeMounts:
+                    .: {}
+                    k:{"mountPath":"/projects"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                    k:{"mountPath":"/var/lib/codebase-memory-mcp"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                      f:subPath: {}
+              f:dnsPolicy: {}
+              f:imagePullSecrets:
+                .: {}
+                k:{"name":"default-secret"}: {}
+              f:restartPolicy: {}
+              f:schedulerName: {}
+              f:securityContext: {}
+              f:terminationGracePeriodSeconds: {}
+              f:tolerations: {}
+              f:volumes:
+                .: {}
+                k:{"name":"pvc-efs-coder"}:
+                  .: {}
+                  f:name: {}
+                  f:persistentVolumeClaim:
+                    .: {}
+                    f:claimName: {}
+                k:{"name":"pvc-kb-files"}:
+                  .: {}
+                  f:name: {}
+                  f:persistentVolumeClaim:
+                    .: {}
+                    f:claimName: {}
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: apps/v1
+      time: '2026-09-24T09:19:36Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            f:deployment.kubernetes.io/revision: {}
+        f:status:
+          f:availableReplicas: {}
+          f:conditions:
+            .: {}
+            k:{"type":"Available"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+            k:{"type":"Progressing"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+          f:observedGeneration: {}
+          f:readyReplicas: {}
+          f:replicas: {}
+          f:terminatingReplicas: {}
+          f:updatedReplicas: {}
+      subresource: status
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: haisi-dual-mcp
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: haisi-dual-mcp
+        version: v1
+      annotations:
+        pod.cce.io/tags: '{"CCE-Cluster-ID":"80d810f0-b565-11f1-8a63-0255ac100323","CCE-Namespace":"default"}'
+        resource.cce.io/instance-type: general-computing
+    spec:
+      volumes:
+        - name: pvc-efs-coder
+          persistentVolumeClaim:
+            claimName: pvc-efs-coder
+        - name: pvc-kb-files
+          persistentVolumeClaim:
+            claimName: pvc-kb-files
+      containers:
+        - name: container-dual-mcp
+          image: swr.cn-south-1.myhuaweicloud.com/hisilicon-rag/haisi-dual-mcp:v1.6
+          env:
+            - name: PAAS_APP_NAME
+              value: haisi-dual-mcp
+            - name: PAAS_NAMESPACE
+              value: default
+            - name: PAAS_PROJECT_ID
+              value: 57dba659283c4cfda3632e06e6f8097c
+            - name: CBM_WORKERS
+              value: '2'
+            - name: CBM_MAX_FILE_BYTES
+              value: '8388608'
+            - name: CBM_DAEMON_JOB_LIMIT
+              value: '1'
+            - name: CBM_MEM_BUDGET_MB
+              value: '3072'
+          resources:
+            limits:
+              cpu: '2'
+              memory: 6Gi
+            requests:
+              cpu: '2'
+              memory: 6Gi
+          volumeMounts:
+            - name: pvc-efs-coder
+              mountPath: /var/lib/codebase-memory-mcp
+              subPath: coder/codebase-memory-mcp
+            - name: pvc-kb-files
+              mountPath: /projects
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      imagePullSecrets:
+        - name: default-secret
+      schedulerName: default-scheduler
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+status:
+  observedGeneration: 1
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  terminatingReplicas: 0
+  conditions:
+    - type: Available
+      status: 'True'
+      lastUpdateTime: '2026-09-24T09:19:36Z'
+      lastTransitionTime: '2026-09-24T09:19:36Z'
+      reason: MinimumReplicasAvailable
+      message: Deployment has minimum availability.
+    - type: Progressing
+      status: 'True'
+      lastUpdateTime: '2026-09-24T09:19:36Z'
+      lastTransitionTime: '2026-09-24T09:19:05Z'
+      reason: NewReplicaSetAvailable
+      message: ReplicaSet "haisi-dual-mcp-798bdbd575" has successfully progressed.

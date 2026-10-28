@@ -1,0 +1,54 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: memmachine
+  namespace: default
+  uid: 9d8543d8-0a23-4d68-9cc2-b82a89507399
+  resourceVersion: '1804602'
+  creationTimestamp: '2026-09-24T09:05:25Z'
+  labels:
+    app: memmachine
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: v1
+      time: '2026-09-24T09:05:25Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:labels:
+            .: {}
+            f:app: {}
+        f:spec:
+          f:internalTrafficPolicy: {}
+          f:ports:
+            .: {}
+            k:{"port":8080,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+          f:selector: {}
+          f:sessionAffinity: {}
+          f:type: {}
+  annotations: {}
+spec:
+  ports:
+    - name: cce-service-0
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: memmachine
+  clusterIP: 10.247.117.184
+  clusterIPs:
+    - 10.247.117.184
+  type: ClusterIP
+  sessionAffinity: None
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  internalTrafficPolicy: Cluster
+status:
+  loadBalancer: {}

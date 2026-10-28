@@ -1,0 +1,115 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: haisi-dual-mcp-public
+  namespace: default
+  uid: 766c6367-0cca-4155-b1be-e3c8a47f9b72
+  resourceVersion: '1827083'
+  creationTimestamp: '2026-09-24T09:52:28Z'
+  labels:
+    app: haisi-dual-mcp
+    version: v1
+  annotations:
+    kubernetes.io/elb.class: performance
+    kubernetes.io/elb.health-check-flag: 'on'
+    kubernetes.io/elb.health-check-option: '{"protocol":"TCP","delay":"5","timeout":"10","max_retries":"3"}'
+    kubernetes.io/elb.id: 80f2edc4-9aea-43e4-b328-3cae40a22268
+    kubernetes.io/elb.lb-algorithm: ROUND_ROBIN
+  finalizers:
+    - service.kubernetes.io/load-balancer-cleanup
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: v1
+      time: '2026-09-24T09:52:28Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:kubernetes.io/elb.class: {}
+            f:kubernetes.io/elb.health-check-flag: {}
+            f:kubernetes.io/elb.health-check-option: {}
+            f:kubernetes.io/elb.id: {}
+            f:kubernetes.io/elb.lb-algorithm: {}
+          f:labels:
+            .: {}
+            f:app: {}
+            f:version: {}
+        f:spec:
+          f:allocateLoadBalancerNodePorts: {}
+          f:externalTrafficPolicy: {}
+          f:internalTrafficPolicy: {}
+          f:ports:
+            .: {}
+            k:{"port":9800,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+            k:{"port":9801,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+          f:selector: {}
+          f:sessionAffinity: {}
+          f:type: {}
+    - manager: cloud-controller-manager
+      operation: Update
+      apiVersion: v1
+      time: '2026-09-24T09:52:28Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:spec:
+          f:loadBalancerIP: {}
+    - manager: cloud-controller-manager
+      operation: Update
+      apiVersion: v1
+      time: '2026-09-24T09:52:30Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:finalizers:
+            .: {}
+            v:"service.kubernetes.io/load-balancer-cleanup": {}
+        f:status:
+          f:loadBalancer:
+            f:ingress: {}
+      subresource: status
+spec:
+  ports:
+    - name: cce-service-0
+      protocol: TCP
+      port: 9800
+      targetPort: 9800
+      nodePort: 32337
+    - name: cce-service-1
+      protocol: TCP
+      port: 9801
+      targetPort: 9801
+      nodePort: 31465
+  selector:
+    app: haisi-dual-mcp
+    version: v1
+  clusterIP: 10.247.71.118
+  clusterIPs:
+    - 10.247.71.118
+  type: LoadBalancer
+  sessionAffinity: None
+  loadBalancerIP: 192.168.0.117
+  externalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  allocateLoadBalancerNodePorts: true
+  internalTrafficPolicy: Cluster
+status:
+  loadBalancer:
+    ingress:
+      - ip: 192.168.0.117
+        ipMode: VIP
+      - ip: 113.45.181.210
+        ipMode: VIP

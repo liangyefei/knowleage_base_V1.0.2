@@ -1,0 +1,77 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: haisi-dual-mcp
+  namespace: default
+  uid: 73a0bea4-631f-4801-bd1b-1317d7acd490
+  resourceVersion: '1817673'
+  creationTimestamp: '2026-09-24T09:32:56Z'
+  labels:
+    app: haisi-dual-mcp
+    version: v1
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: v1
+      time: '2026-09-24T09:32:56Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:labels:
+            .: {}
+            f:app: {}
+            f:version: {}
+        f:spec:
+          f:internalTrafficPolicy: {}
+          f:ports:
+            .: {}
+            k:{"port":9789,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+            k:{"port":9800,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+            k:{"port":9801,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+          f:selector: {}
+          f:sessionAffinity: {}
+          f:type: {}
+  annotations: {}
+spec:
+  ports:
+    - name: cce-service-0
+      protocol: TCP
+      port: 9789
+      targetPort: 9788
+    - name: cce-service-1
+      protocol: TCP
+      port: 9800
+      targetPort: 9800
+    - name: cce-service-2
+      protocol: TCP
+      port: 9801
+      targetPort: 9801
+  selector:
+    app: haisi-dual-mcp
+    version: v1
+  clusterIP: 10.247.124.102
+  clusterIPs:
+    - 10.247.124.102
+  type: ClusterIP
+  sessionAffinity: None
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  internalTrafficPolicy: Cluster
+status:
+  loadBalancer: {}

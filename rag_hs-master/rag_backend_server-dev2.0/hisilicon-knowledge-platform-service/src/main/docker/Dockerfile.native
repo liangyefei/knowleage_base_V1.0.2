@@ -1,0 +1,53 @@
+####
+# This Dockerfile is used in order to build a container that runs the Quarkus application in native (no JVM) mode.
+#
+# Before building the container image run:
+#
+# ./gradlew build -Dquarkus.native.enabled=true
+#
+# Then, build the image with:
+#
+# docker build -f src/main/docker/Dockerfile.native -t quarkus/hisilicon-knowledge-platform .
+#
+# Then run the container using:
+#
+# docker run -i --rm -p 8080:8080 quarkus/hisilicon-knowledge-platform
+#
+# The ` registry.access.redhat.com/ubi9/ubi-minimal:9.7` base image is based on UBI 9.
+# To use UBI 8, switch to `quay.io/ubi8/ubi-minimal:8.10`.
+###
+# RAR5 解压工具 7zz（方案 B：native 模式下 7-Zip-JBinding 的 JNI 不可用，RarFileExtractor 转调外部进程）。
+# 采用"二进制入库"：官方静态单文件（linux-x64）提交在本目录 src/main/docker/7zz，构建期 COPY 进镜像。
+# 零网络依赖，内网/离线环境通吃。升级 7-Zip 时在有外网的机器重新下载覆盖该文件：
+#   curl -L https://www.7-zip.org/a/7z2501-linux-x64.tar.xz | tar -xJ 7zz
+# ⚠️ 不要用 UBI 源的 p7zip——发行版因 unRAR 许可剥离了 RAR codec，解不了 RAR5。
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.7
+
+# POI 文档抽取（DocumentContentIndexService）依赖字体信息：ubi-minimal 不含，必须安装
+# （quarkus-poi 官方要求，缺失时 docx/xlsx/pptx 解析报字体相关错误）
+RUN microdnf update -y && microdnf install -y freetype fontconfig && microdnf clean all
+
+# 容器默认时区设为东八区：native 二进制经 -H:+IncludeAllTimeZones 已含 Asia/Shanghai 时区数据，
+# 运行时由 TZ 环境变量控制默认时区（影响日志 %d 与 LocalDateTime.now() 等）。CCE 节点默认 UTC，
+# 不显式设定则日志/DB 时间戳比北京时间少 8 小时。
+ENV TZ=Asia/Shanghai
+
+WORKDIR /work/
+RUN chown 1001 /work \
+    && chmod "g+rwX" /work \
+    && chown 1001:root /work
+COPY --chown=1001:root --chmod=0755 build/*-runner /work/application
+# quarkus-awt（POI/PDFBox 文档抽取依赖）：native 构建会在 runner 旁产出 awt 相关 .so 动态库，
+# 运行时由 AWT 从应用目录加载（缺失时 java.awt.image.ColorModel 报 UnsatisfiedLinkError: Can't load library: awt）。
+# ⚠️ 确保 .dockerignore 未排除 *.so
+COPY --chown=1001:root --chmod=0755 build/*.so /work/
+
+# 7zz 已提交在本目录（二进制入库，零网络依赖）
+COPY --chown=1001:root --chmod=0755 src/main/docker/7zz /work/7zz
+# 指向外部工具；缺失时 RAR5 上传会得到明确报错（RAR4 不受影响）
+ENV KB_ARCHIVE_EXTERNAL_TOOL=/work/7zz
+
+EXPOSE 8080
+USER 1001
+
+ENTRYPOINT ["./application", "-Dquarkus.http.host=0.0.0.0"]

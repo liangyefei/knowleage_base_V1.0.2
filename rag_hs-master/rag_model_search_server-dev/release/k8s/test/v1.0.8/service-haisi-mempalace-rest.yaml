@@ -1,0 +1,67 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: haisi-mempalace-rest
+  namespace: default
+  uid: 2b793fc3-84eb-44c5-b98f-665d5d4357d4
+  resourceVersion: '1815063'
+  creationTimestamp: '2026-09-24T09:27:29Z'
+  labels:
+    app: haisi-mempalace-rest
+    version: v1
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: v1
+      time: '2026-09-24T09:27:29Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:labels:
+            .: {}
+            f:app: {}
+            f:version: {}
+        f:spec:
+          f:internalTrafficPolicy: {}
+          f:ports:
+            .: {}
+            k:{"port":8765,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+            k:{"port":8777,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+          f:selector: {}
+          f:sessionAffinity: {}
+          f:type: {}
+  annotations: {}
+spec:
+  ports:
+    - name: cce-service-0
+      protocol: TCP
+      port: 8765
+      targetPort: 8765
+    - name: cce-service-1
+      protocol: TCP
+      port: 8777
+      targetPort: 8777
+  selector:
+    app: haisi-mempalace-rest
+    version: v1
+  clusterIP: 10.247.180.220
+  clusterIPs:
+    - 10.247.180.220
+  type: ClusterIP
+  sessionAffinity: None
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  internalTrafficPolicy: Cluster
+status:
+  loadBalancer: {}

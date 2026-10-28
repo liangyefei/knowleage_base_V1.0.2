@@ -1,0 +1,11 @@
+*
+!build/*-runner
+!build/*-runner.jar
+!build/lib/*
+!build/quarkus-app/*
+# quarkus-awt（POI/PDFBox 文档抽取）：native 产出的 awt 相关动态库，运行时必须随镜像分发
+!build/*.so
+# RAR5 外部解压工具 7zz：二进制入库（linux-x64 静态单文件），Dockerfile.native 从本目录 COPY 进镜像。
+# ⚠️ buildah/podman 只认 context 根的这个 .dockerignore，不认 src/main/docker/Dockerfile.native.dockerignore，
+#    两处需同步维护——缺此条 COPY src/main/docker/7zz 会被过滤（copier 报 no items matching glob）。
+!src/main/docker/7zz

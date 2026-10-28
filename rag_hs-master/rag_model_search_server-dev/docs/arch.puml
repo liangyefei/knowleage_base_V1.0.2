@@ -1,0 +1,165 @@
+@startuml
+!define RECTANGLE class
+
+skinparam componentStyle uml2
+skinparam nodesep 80
+skinparam ranksep 80
+skinparam linetype ortho
+
+' ==================== 用户层 ====================
+actor "User" as User
+
+' ==================== Web Layer ====================
+package "Web Layer" {
+  [Streamlit Web UI] as WebUI
+}
+
+' ==================== API Layer ====================
+package "API Layer" {
+  [FastAPI Server] as API
+  package "Core APIs" {
+    [Chat API] as ChatAPI
+    [Knowledge Base API] as KBAPI
+    [Embedding API] as EmbedAPI
+    [LLM Model API] as LLMAPI
+  }
+}
+
+' ==================== Model Service Layer ====================
+package "Model Service Layer" {
+  package "Embedding Workers" {
+    [Qwen3-Embedding\nAPI Service] as Qwen3Emb
+  }
+  
+  package "Reranker Workers" {
+    [Coreb-Code-Reranker\nAPI Service] as CorebRerank
+  }
+  
+  package "LLM Workers" {
+    [Doubao-Seed-2.0-lite\n(VLM)] as DoubaoVLM
+    [Doubao-1.5-pro-32k\n(ChatLLM)] as DoubaoChat
+    [GLM-5\n(CodeLLM)] as GLM5Code
+  }
+}
+
+' ==================== Business Logic Layer ====================
+package "Business Logic Layer" {
+  [LangGraph Workflow] as Workflow
+  
+  package "Document Processing" {
+    [Document Loaders] as DocLoader
+    [Text Splitters] as Splitter
+  }
+  
+  package "Retrieval Services" {
+    [Vector Retrieval] as VectorRet
+    [Knowledge Graph\n(Future)] as KG
+    [Result Fusion] as Fusion
+  }
+}
+
+' ==================== Data Storage Layer ====================
+package "Data Storage Layer" {
+  package "Vector Databases" {
+    database "Milvus\n(Primary)" as Milvus
+    database "Elasticsearch\n(Hybrid)" as ES
+    database "PostgreSQL\n(Metadata)" as PG
+  }
+  
+  package "Message Queue" {
+    database "Redis\n(Stream)" as Redis
+  }
+  
+  package "External Services" {
+    [MemMachine\n(Memory)] as MemMachine
+    [MemPalace\n(Doc Retrieval)] as MemPalace
+  }
+}
+
+' ==================== 主流程连接 ====================
+
+' 用户 -> Web UI -> API
+User --> WebUI
+WebUI --> API
+
+' API 分发
+API --> ChatAPI
+API --> KBAPI 
+API --> EmbedAPI
+API --> LLMAPI
+
+' 对话流程
+ChatAPI --> Workflow
+Workflow --> VectorRet
+Workflow --> KG
+Workflow --> Fusion
+VectorRet --> Fusion
+KG --> Fusion
+
+' 知识库流程
+KBAPI --> VectorRet
+KBAPI --> Redis
+
+' 文档处理流程
+DocLoader --> Splitter
+Splitter --> VectorRet
+
+' 向量检索 -> 数据存储
+VectorRet --> Milvus
+VectorRet --> ES
+VectorRet --> PG
+
+' ==================== 模型服务连接 ====================
+
+' Embedding 服务
+EmbedAPI --> Qwen3Emb
+Qwen3Emb --> VectorRet
+
+' Reranker 服务
+CorebRerank --> Fusion
+
+' LLM 服务
+LLMAPI --> DoubaoChat
+DoubaoChat --> ChatAPI
+DoubaoVLM --> DocLoader : OCR
+GLM5Code --> ChatAPI : Code
+
+' ==================== 外部服务连接 ====================
+
+MemMachine --> ChatAPI
+MemPalace --> VectorRet
+
+' ==================== 注释说明 ====================
+
+note right of Milvus
+  高性能分布式
+  向量数据库
+end note
+
+note right of ES
+  全文+向量
+  混合检索
+end note
+
+note right of PG
+  元数据
+  存储
+end note
+
+note right of Workflow
+  多步骤推理
+  知识图谱融合
+  (规划中)
+end note
+
+note bottom of MemMachine
+  长期记忆服务
+  增强对话上下文
+end note
+
+note bottom of MemPalace
+  文档检索服务
+  多路召回
+end note
+
+@enduml

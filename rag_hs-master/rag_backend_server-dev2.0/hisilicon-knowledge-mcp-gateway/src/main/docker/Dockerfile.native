@@ -1,0 +1,44 @@
+####
+# This Dockerfile is used in order to build a container that runs the Quarkus application in native (no JVM) mode.
+#
+# Before building the container image run:
+#
+# ./gradlew :hisilicon-knowledge-mcp-gateway:build -Dquarkus.native.enabled=true
+#
+# Then, build the image with:
+#
+# docker build -f src/main/docker/Dockerfile.native -t quarkus/hisilicon-knowledge-mcp-gateway .
+#
+# Then run the container using:
+#
+# docker run -i --rm -p 8080:8080 quarkus/hisilicon-knowledge-mcp-gateway
+#
+# The ` registry.access.redhat.com/ubi9/ubi-minimal:9.7` base image is based on UBI 9.
+# To use UBI 8, switch to `quay.io/ubi8/ubi-minimal:8.10`.
+#
+# ⚠️ 与 hisilicon-knowledge-core-service 的同名文件**故意不同**，不要照抄对齐：
+#    本服务只做身份与访问（用户/角色/权限/登录/令牌），不抽取文档、不解压压缩包、不碰 AWT，
+#    因此不需要 core 那份里的三样东西：
+#      - microdnf install freetype fontconfig —— POI 文档抽取要字体信息才装
+#      - COPY build/*.so                    —— quarkus-awt（POI/PDFBox）产出的动态库
+#      - COPY src/main/docker/7zz           —— RAR5 解压外部工具
+#    本目录也没有 7zz 二进制。首次 native 构建后若日志提示缺 .so / 字体 / 时区数据，
+#    按提示补回对应行，而不是无条件复制 core 的整份。
+###
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.7
+
+# 容器默认时区设为东八区：CCE 节点默认 UTC，不显式设定则日志/DB 时间戳比北京时间少 8 小时。
+# 时区数据由 GraalVM native 默认行为提供（与 core 一致，两边都未显式传 -H:+IncludeAllTimeZones）。
+ENV TZ=Asia/Shanghai
+
+WORKDIR /work/
+RUN chown 1001 /work \
+    && chmod "g+rwX" /work \
+    && chown 1001:root /work
+COPY --chown=1001:root --chmod=0755 build/*-runner /work/application
+
+EXPOSE 8080 9000
+# 9000 = 探针/管理端口（quarkus.management.port），/q/health 在这里；8080 = 业务端口
+USER 1001
+
+ENTRYPOINT ["./application", "-Dquarkus.http.host=0.0.0.0"]

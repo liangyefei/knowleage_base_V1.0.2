@@ -1,0 +1,64 @@
+# 基础配置文件
+# 包含日志、临时文件、认证、环境等基础配置
+
+# ==================== 环境配置 ====================
+# 运行环境模式
+ENV:
+  MODE: "devp"
+
+# ==================== 日志配置 ====================
+# loguru 日志配置
+LOG:
+  # 日志存储路径
+  PATH: "/kw/logs"
+  # loguru 日志格式
+  FORMAT: "<green>{time}</green>|<level>{level:<8}</level>| kw |{file}:{function}:{line} - <level>{message}</level>"
+  # 服务名称
+  SERVER_NAME: "kw"
+  # 日志级别
+  LEVEL: "INFO"
+  # 是否启用控制台输出（生产环境可设 false 减少 stdout 开销）
+  ENABLE_CONSOLE: true
+  # 通用文件按大小滚动
+  FILE_ROTATION: "100 MB"
+  # 通用文件保留期
+  FILE_RETENTION: "30 days"
+  # 向量化日志独立文件按大小滚动
+  VECTORIZE_FILE_ROTATION: "500 MB"
+  # 向量化日志保留期
+  VECTORIZE_FILE_RETENTION: "30 days"
+  # ERROR 日志文件按大小滚动
+  ERROR_FILE_ROTATION: "50 MB"
+  # ERROR 日志保留期（保留更久便于追溯）
+  ERROR_FILE_RETENTION: "90 days"
+  # Kafka 日志独立文件按大小滚动（成功+失败均写入，便于排查回调丢失）
+  KAFKA_FILE_ROTATION: "200 MB"
+  # Kafka 日志保留期
+  KAFKA_FILE_RETENTION: "30 days"
+
+# ==================== 临时文件配置 ====================
+# 临时文件目录，主要用于文件对话
+# BASE_TEMP_DIR 使用系统临时目录下的 chatchat 子目录
+# null 表示使用系统默认临时目录
+BASE_TEMP_DIR: /kb-files
+
+# ==================== Langchain 配置 ====================
+# 模型端设置日志，是否显示详细日志
+log_verbose: false
+langchain_verbose: false
+
+# # ==================== 多用户登录配置 ====================
+# # Token 密钥
+# QA_TOKEN_SECRET: "farai-qa-secret-change-me-2026"
+
+# # Token 有效期（小时）
+# QA_TOKEN_TTL_HOURS: 168  # 默认7天
+
+# # 管理员账户
+# QA_ADMIN_USER: "admin"
+# QA_ADMIN_PASSWORD: "admin123"
+
+# # ==================== 下一问题服务配置 ====================
+# # 用于生成追问问题的模型服务地址
+# NEXT_QUESTION_ADDRESS:
+#   URL: "http://gptcoder-models-ollama.gptcoder.svc.cluster.local:11527/v1"

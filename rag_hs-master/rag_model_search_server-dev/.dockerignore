@@ -1,0 +1,39 @@
+# 部署产物目录（原 deploy，已改名为 release）：compose/k8s/部署文档
+release/
+
+# 开源服务源码（4个独立微服务，各自独立构建，主镜像运行时不引用）
+open_source/
+
+# Python 缓存与编译产物
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.pytest_cache
+**/.mypy_cache
+**/*.egg-info
+
+# Git 元数据
+**/.git
+**/.gitattributes
+**/.gitmodules
+**/.gitignore
+
+# 虚拟环境
+**/.venv
+**/venv
+**/env
+
+# IDE / 编辑器
+**/.vscode
+**/.idea
+**/.DS_Store
+
+# 日志与临时文件
+**/*.log
+**/logs/*
+**/*.tmp
+
+# IDE / 工作目录（防御本地构建场景；docs/ 被 git 跟踪，fresh clone 也有，必须排除）
+.trae/
+docs/

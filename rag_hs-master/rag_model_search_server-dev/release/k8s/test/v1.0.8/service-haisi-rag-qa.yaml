@@ -1,0 +1,64 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: haisi-rag-qa
+  namespace: default
+  uid: 58414a71-1d60-4ed5-9cd5-f82f14229cbc
+  resourceVersion: '1780025'
+  creationTimestamp: '2026-09-24T08:07:45Z'
+  labels:
+    app: haisi-rag-qa
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: v1
+      time: '2026-09-24T08:07:45Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:labels:
+            .: {}
+            f:app: {}
+        f:spec:
+          f:internalTrafficPolicy: {}
+          f:ports:
+            .: {}
+            k:{"port":47861,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+            k:{"port":48501,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+          f:selector: {}
+          f:sessionAffinity: {}
+          f:type: {}
+  annotations: {}
+spec:
+  ports:
+    - name: cce-service-0
+      protocol: TCP
+      port: 48501
+      targetPort: 8501
+    - name: cce-service-1
+      protocol: TCP
+      port: 47861
+      targetPort: 7861
+  selector:
+    app: haisi-rag-qa
+  clusterIP: 10.247.27.133
+  clusterIPs:
+    - 10.247.27.133
+  type: ClusterIP
+  sessionAffinity: None
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  internalTrafficPolicy: Cluster
+status:
+  loadBalancer: {}

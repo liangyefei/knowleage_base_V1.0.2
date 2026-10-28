@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>武侠知识图谱查询</title>
+    <!-- vis.js 网络图库 -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* 颜色系统 */
+            --color-primary: #3b82f6;
+            --color-primary-hover: #2563eb;
+            --color-bg: #f8fafc;
+            --color-surface: #ffffff;
+            --color-text: #1e293b;
+            --color-text-secondary: #64748b;
+            --color-border: #e2e8f0;
+            --color-shadow: rgba(0, 0, 0, 0.1);
+
+            /* 实体类型颜色 */
+            --color-person: #3b82f6;
+            --color-organization: #10b981;
+            --color-location: #f59e0b;
+            --color-skill: #8b5cf6;
+            --color-artifact: #ef4444;
+            --color-event: #ec4899;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 头部 */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+        }
+
+        /* 搜索区域 */
+        .search-section {
+            background: var(--color-surface);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px var(--color-shadow);
+            margin-bottom: 24px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 12px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 14px 20px;
+            font-size: 16px;
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--color-primary);
+        }
+
+        .search-button {
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 500;
+            color: white;
+            background: var(--color-primary);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-button:hover {
+            background: var(--color-primary-hover);
+        }
+
+        .search-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* 示例问题 */
+        .example-questions {
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .example-questions span {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+            margin-right: 8px;
+        }
+
+        .example-tag {
+            display: inline-block;
+            padding: 6px 12px;
+            margin: 4px;
+            font-size: 13px;
+            color: var(--color-primary);
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .example-tag:hover {
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        /* 图谱区域 */
+        .graph-section {
+            background: var(--color-surface);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px var(--color-shadow);
+            min-height: 500px;
+        }
+
+        .graph-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .graph-title {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .graph-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-button {
+            padding: 8px 16px;
+            font-size: 13px;
+            color: var(--color-text);
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .control-button:hover {
+            background: var(--color-border);
+        }
+
+        /* 图谱容器 */
+        #graph {
+            width: 100%;
+            height: 500px;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+        }
+
+        /* 图例 */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--color-bg);
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        /* 加载状态 */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 16px;
+            border: 3px solid var(--color-border);
+            border-top-color: var(--color-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-text-secondary);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* 详情面板 */
+        .detail-panel {
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--color-bg);
+            border-radius: 8px;
+            display: none;
+        }
+
+        .detail-panel.active {
+            display: block;
+        }
+
+        .detail-title {
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .detail-content {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .search-box {
+                flex-direction: column;
+            }
+
+            .graph-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            #graph {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>🗡️ 武侠知识图谱查询</h1>
+            <p>输入问题，探索武侠世界中的人物、门派、武功与事件</p>
+        </div>
+
+        <!-- 搜索区域 -->
+        <div class="search-section">
+            <div class="search-box">
+                <input
+                    type="text"
+                    id="searchInput"
+                    class="search-input"
+                    placeholder="例如：张无忌的师父是谁？"
+                    onkeypress="if(event.key === 'Enter') search()"
+                >
+                <button class="search-button" onclick="search()" id="searchBtn">
+                    🔍 查询
+                </button>
+            </div>
+            <div class="example-questions">
+                <span>试试问：</span>
+                <span class="example-tag" onclick="setQuery('张无忌的师父是谁？')">张无忌的师父是谁？</span>
+                <span class="example-tag" onclick="setQuery('明教有哪些高手？')">明教有哪些高手？</span>
+                <span class="example-tag" onclick="setQuery('九阳神功是谁练的？')">九阳神功是谁练的？</span>
+                <span class="example-tag" onclick="setQuery('光明顶发生了什么？')">光明顶发生了什么？</span>
+            </div>
+        </div>
+
+        <!-- 图谱区域 -->
+        <div class="graph-section">
+            <div class="graph-header">
+                <div class="graph-title">知识图谱</div>
+                <div class="graph-controls">
+                    <button class="control-button" onclick="resetZoom()">🔄 重置视图</button>
+                    <button class="control-button" onclick="fitGraph()">📐 适应画布</button>
+                </div>
+            </div>
+
+            <!-- 加载状态 -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>正在查询知识图谱...</p>
+            </div>
+
+            <!-- 空状态 -->
+            <div class="empty-state" id="emptyState">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <p>输入问题开始探索武侠世界</p>
+            </div>
+
+            <!-- 图谱容器 -->
+            <div id="graph" style="display: none;"></div>
+
+            <!-- 图例 -->
+            <div class="legend" id="legend" style="display: none;">
+                <div class="legend-item">
+                    <span class="legend-color" style="background: var(--color-person);"></span>
+                    <span>人物</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: var(--color-organization);"></span>
+                    <span>门派</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: var(--color-location);"></span>
+                    <span>地点</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: var(--color-skill);"></span>
+                    <span>武功</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: var(--color-artifact);"></span>
+                    <span>兵器</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: var(--color-event);"></span>
+                    <span>事件</span>
+                </div>
+            </div>
+
+            <!-- 详情面板 -->
+            <div class="detail-panel" id="detailPanel">
+                <div class="detail-title" id="detailTitle">节点详情</div>
+                <div class="detail-content" id="detailContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 颜色映射
+        const ENTITY_COLORS = {
+            'Person': '#3b82f6',
+            'Organization': '#10b981',
+            'Location': '#f59e0b',
+            'Skill': '#8b5cf6',
+            'Artifact': '#ef4444',
+            'Event': '#ec4899',
+            'Time': '#6b7280'
+        };
+
+        // 网络图实例
+        let network = null;
+        let nodes = null;
+        let edges = null;
+
+        // 设置查询问题
+        function setQuery(question) {
+            document.getElementById('searchInput').value = question;
+            search();
+        }
+
+        // 搜索函数
+        async function search() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) {
+                alert('请输入问题');
+                return;
+            }
+
+            // 显示加载状态
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('graph').style.display = 'none';
+            document.getElementById('legend').style.display = 'none';
+            document.getElementById('searchBtn').disabled = true;
+
+            try {
+                // 调用后端 API
+                const response = await fetch('/api/wuxia/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ question: query })
+                });
+
+                if (!response.ok) {
+                    throw new Error('查询失败');
+                }
+
+                const data = await response.json();
+
+                // 显示图谱
+                if (data.nodes && data.nodes.length > 0) {
+                    renderGraph(data);
+                } else {
+                    document.getElementById('emptyState').innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p>未找到相关知识</p>
+                    `;
+                    document.getElementById('emptyState').style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('emptyState').innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p>查询出错，请稍后重试</p>
+                `;
+                document.getElementById('emptyState').style.display = 'block';
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('searchBtn').disabled = false;
+            }
+        }
+
+        // 渲染图谱
+        function renderGraph(data) {
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('graph').style.display = 'block';
+            document.getElementById('legend').style.display = 'flex';
+
+            // 转换节点数据
+            const visNodes = data.nodes.map(node => ({
+                id: node.id,
+                label: node.label,
+                title: node.type + '\n' + (node.description || ''),
+                group: node.type,
+                color: {
+                    background: ENTITY_COLORS[node.type] || '#6b7280',
+                    border: ENTITY_COLORS[node.type] || '#6b7280'
+                },
+                font: {
+                    size: 14,
+                    color: '#ffffff'
+                },
+                shapeProperties: {
+                    borderRadius: 8
+                }
+            }));
+
+            // 转换边数据
+            const visEdges = data.edges.map((edge, index) => ({
+                id: index,
+                from: edge.source,
+                to: edge.target,
+                label: edge.relation,
+                title: edge.relation,
+                arrows: 'to',
+                color: {
+                    color: '#94a3b8',
+                    highlight: '#3b82f6'
+                },
+                font: {
+                    size: 12,
+                    align: 'middle'
+                },
+                smooth: {
+                    type: 'curvedCW',
+                    roundness: 0.2
+                }
+            }));
+
+            // 创建数据集
+            nodes = new vis.DataSet(visNodes);
+            edges = new vis.DataSet(visEdges);
+
+            // 网络配置
+            const container = document.getElementById('graph');
+            const config = {
+                nodes: {
+                    shape: 'box',
+                    margin: 10,
+                    widthConstraint: {
+                        maximum: 200
+                    },
+                    font: {
+                        size: 14
+                    }
+                },
+                edges: {
+                    width: 2,
+                    smooth: {
+                        type: 'curvedCW',
+                        roundness: 0.2
+                    },
+                    arrows: {
+                        to: {
+                            enabled: true,
+                            scaleFactor: 0.8
+                        }
+                    }
+                },
+                physics: {
+                    stabilization: true,
+                    barnesHut: {
+                        gravitationalConstant: -3000,
+                        springConstant: 0.04,
+                        springLength: 95
+                    }
+                },
+                interaction: {
+                    hover: true,
+                    tooltipDelay: 100
+                }
+            };
+
+            // 创建网络
+            network = new vis.Network(container, { nodes, edges }, config);
+
+            // 节点点击事件
+            network.on('click', function(params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    const node = nodes.get(nodeId);
+                    showDetail(node);
+                }
+            });
+
+            // 稳定后适应画布
+            network.once('stabilizationIterationsDone', function() {
+                network.fit({ animation: true });
+            });
+        }
+
+        // 显示节点详情
+        function showDetail(node) {
+            const panel = document.getElementById('detailPanel');
+            const title = document.getElementById('detailTitle');
+            const content = document.getElementById('detailContent');
+
+            title.textContent = node.label;
+
+            // 获取连接的节点
+            const connectedNodes = network.getConnectedNodes(node.id);
+            let details = `类型: ${node.group}\n`;
+
+            if (connectedNodes.length > 0) {
+                details += `\n关联 (${connectedNodes.length}):\n`;
+                connectedNodes.forEach(connectedId => {
+                    const connectedNode = nodes.get(connectedId);
+                    const edge = network.getConnectedEdges(node.id, connectedId);
+                    const edgeData = edges.get(edge[0]);
+                    details += `  • ${edgeData.label} ${connectedNode.label}\n`;
+                });
+            }
+
+            content.textContent = details;
+            panel.classList.add('active');
+        }
+
+        // 重置视图
+        function resetZoom() {
+            if (network) {
+                network.fit({ animation: true });
+            }
+        }
+
+        // 适应画布
+        function fitGraph() {
+            if (network) {
+                network.fit({ animation: true });
+            }
+        }
+
+        // 页面加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            // 聚焦搜索框
+            document.getElementById('searchInput').focus();
+        });
+    </script>
+</body>
+</html>

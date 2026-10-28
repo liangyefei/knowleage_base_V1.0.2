@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  预留模块也声明为 bean archive（与其它 commons 模块一致）：
+  后续在此加 @ApplicationScoped 等 Bean 时无需再记得补本文件——
+  没有它，依赖本模块的服务不会发现其中的 Bean，且症状是启动期 UnsatisfiedDependency 或
+  注入静默缺失，排查成本高。当前模块内暂无 Bean，声明本身无副作用。
+-->
+<beans xmlns="https://jakarta.ee/xml/ns/jakartaee"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/beans_4_0.xsd"
+       version="4.0"
+       bean-discovery-mode="annotated">
+</beans>

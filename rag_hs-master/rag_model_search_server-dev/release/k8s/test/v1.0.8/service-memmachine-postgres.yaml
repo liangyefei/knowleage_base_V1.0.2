@@ -1,0 +1,54 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: memmachine-postgres
+  namespace: default
+  uid: 07c3ae80-856d-47ec-ae9e-82e6d134ea48
+  resourceVersion: '1805221'
+  creationTimestamp: '2026-09-24T09:06:49Z'
+  labels:
+    app: memmachine-postgres
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: v1
+      time: '2026-09-24T09:06:49Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:labels:
+            .: {}
+            f:app: {}
+        f:spec:
+          f:internalTrafficPolicy: {}
+          f:ports:
+            .: {}
+            k:{"port":5432,"protocol":"TCP"}:
+              .: {}
+              f:name: {}
+              f:port: {}
+              f:protocol: {}
+              f:targetPort: {}
+          f:selector: {}
+          f:sessionAffinity: {}
+          f:type: {}
+  annotations: {}
+spec:
+  ports:
+    - name: cce-service-0
+      protocol: TCP
+      port: 5432
+      targetPort: 5432
+  selector:
+    app: memmachine-postgres
+  clusterIP: 10.247.224.70
+  clusterIPs:
+    - 10.247.224.70
+  type: ClusterIP
+  sessionAffinity: None
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  internalTrafficPolicy: Cluster
+status:
+  loadBalancer: {}

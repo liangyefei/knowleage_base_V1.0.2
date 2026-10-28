@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1400" viewBox="0 0 1800 1400" font-family="Microsoft YaHei, SimHei, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#37474f"/>
+    </marker>
+    <marker id="arrBlue" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#1a56db"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1800" height="1400" fill="#ffffff"/>
+  <text x="900" y="52" font-size="36" font-weight="bold" text-anchor="middle" fill="#263238">海思知识库 - 部署图</text>
+
+  <!-- 华为云 -->
+  <rect x="220" y="70" width="1570" height="1300" rx="16" fill="#f4f7fa" stroke="#90a4ae" stroke-width="2"/>
+  <text x="1005" y="102" font-size="29" font-weight="bold" fill="#455a64">华为云</text>
+  <!-- VPC -->
+  <rect x="260" y="120" width="1500" height="1220" rx="12" fill="#eceff1" stroke="#78909c" stroke-width="2"/>
+  <text x="1010" y="152" font-size="26" font-weight="bold" fill="#546e7a">虚拟私有云（VPC）</text>
+  <!-- 子网 -->
+  <rect x="300" y="170" width="1420" height="1140" rx="10" fill="#e3e8ec" stroke="#78909c" stroke-width="1.5"/>
+  <text x="330" y="200" font-size="23" font-weight="bold" fill="#546e7a">子网</text>
+
+  <!-- ===== 外部主体 ===== -->
+  <rect x="30" y="290" width="160" height="70" rx="8" fill="#ffffff" stroke="#37474f" stroke-width="2"/>
+  <text x="110" y="332" font-size="23" text-anchor="middle" fill="#263238">用户</text>
+  <rect x="30" y="420" width="160" height="70" rx="8" fill="#ffffff" stroke="#37474f" stroke-width="2"/>
+  <text x="110" y="462" font-size="23" text-anchor="middle" fill="#263238">agent</text>
+  <rect x="40" y="1100" width="180" height="70" rx="8" fill="#ffffff" stroke="#37474f" stroke-width="2"/>
+  <text x="130" y="1142" font-size="23" text-anchor="middle" fill="#263238">商业模型</text>
+
+  <!-- ELB / WAF / APIG：WAF -> APIG(TLS终止) -> ELB(HTTP) -> CCE -->
+  <rect x="560" y="270" width="140" height="70" rx="8" fill="#ffffff" stroke="#37474f" stroke-width="2"/>
+  <text x="630" y="312" font-size="23" text-anchor="middle" fill="#263238">WAF</text>
+  <rect x="740" y="270" width="140" height="70" rx="8" fill="#ffffff" stroke="#37474f" stroke-width="2"/>
+  <text x="810" y="312" font-size="23" text-anchor="middle" fill="#263238">APIG</text>
+  <rect x="920" y="270" width="140" height="70" rx="8" fill="#ffffff" stroke="#37474f" stroke-width="2"/>
+  <text x="990" y="305" font-size="23" text-anchor="middle" fill="#263238">ELB</text>
+  <text x="990" y="328" font-size="16" text-anchor="middle" fill="#546e7a">HTTP</text>
+
+  <!-- 安全组（边界标注，非节点）：ELB -->
+  <rect x="546" y="256" width="168" height="98" rx="12" fill="none" stroke="#2e7d32" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <text x="552" y="372" font-size="17" fill="#2e7d32">安全组（网络边界）</text>
+
+  <!-- CCE 集群 -->
+  <rect x="620" y="430" width="720" height="600" rx="12" fill="#e8f0f8" stroke="#1565c0" stroke-width="2"/>
+  <text x="980" y="462" font-size="26" font-weight="bold" text-anchor="middle" fill="#0d47a1">云容器引擎 CCE</text>
+  <!-- 安全组（边界标注）：CCE -->
+  <rect x="606" y="416" width="748" height="628" rx="14" fill="none" stroke="#2e7d32" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <text x="620" y="1062" font-size="17" fill="#2e7d32">安全组（网络边界）</text>
+
+  <rect x="660" y="480" width="140" height="70" rx="8" fill="#ffffff" stroke="#1565c0" stroke-width="2"/>
+  <text x="730" y="510" font-size="21" text-anchor="middle" fill="#0d47a1">前端服务</text>
+  <rect x="920" y="480" width="140" height="70" rx="8" fill="#ffffff" stroke="#1565c0" stroke-width="2"/>
+  <text x="990" y="510" font-size="21" text-anchor="middle" fill="#0d47a1">后端服务</text>
+  <rect x="660" y="610" width="140" height="70" rx="8" fill="#ffffff" stroke="#1565c0" stroke-width="2"/>
+  <text x="730" y="652" font-size="21" text-anchor="middle" fill="#0d47a1">模型服务</text>
+  <rect x="1150" y="610" width="150" height="70" rx="8" fill="#ffffff" stroke="#1565c0" stroke-width="2"/>
+  <text x="1225" y="652" font-size="21" text-anchor="middle" fill="#0d47a1">MCP服务</text>
+  <rect x="960" y="760" width="180" height="70" rx="8" fill="#ffffff" stroke="#1565c0" stroke-width="2"/>
+  <text x="1050" y="793" font-size="21" text-anchor="middle" fill="#0d47a1">Milvus</text>
+
+  <!-- GPU 服务器（Embedding）：与商业模型同侧，经 NAT网关+EIP 访问 -->
+  <polygon points="60,950 200,950 220,1000 200,1050 60,1050 40,1000" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="130" y="995" font-size="21" text-anchor="middle" fill="#1b5e20">GPU服务器</text>
+  <text x="130" y="1022" font-size="18" text-anchor="middle" fill="#33691e">Embedding</text>
+
+  <!-- NAT 网关 -->
+  <polygon points="580,1100 690,1100 710,1135 690,1170 580,1170 560,1135" fill="#fff3e0" stroke="#ef6c00" stroke-width="2"/>
+  <text x="635" y="1142" font-size="21" text-anchor="middle" fill="#e65100">NAT网关</text>
+
+  <!-- ===== 连线：接入链路（用户/agent -> WAF -> APIG -> ELB -> CCE Service） ===== -->
+  <path d="M190,325 L556,325" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <path d="M190,455 L270,455 L270,300 L556,300" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <path d="M700,305 L740,305" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <path d="M880,305 L920,305" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="810" y="258" font-size="16" text-anchor="middle" fill="#455a64">APIG 绑定公网入口，TLS 终止</text>
+  <path d="M990,340 L990,426" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="1002" y="400" font-size="17" fill="#455a64">HTTP（绑定ELB的Service）</text>
+
+  <!-- 模型服务 -> （出网）GPU服务器：经 NAT网关 + EIP -->
+
+  <!-- 模型服务 -> Milvus -->
+  <path d="M730,680 L730,795 L960,795" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- 出网链路：CCE -> NAT -> EIP -> 商业模型 -->
+  <path d="M1000,1030 L1000,1135 L714,1135" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="1015" y="1095" font-size="17" fill="#455a64">后端/模型服务出网</text>
+  <!-- 出网 EIP -->
+  <polygon points="330,1100 460,1100 480,1135 460,1170 330,1170 310,1135" fill="#fff8e1" stroke="#f9a825" stroke-width="2"/>
+  <text x="395" y="1142" font-size="21" text-anchor="middle" fill="#5d4037">EIP</text>
+  <path d="M560,1135 L484,1135" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <path d="M310,1135 L224,1135" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <!-- EIP -> GPU服务器（Embedding） -->
+  <path d="M340,1100 L340,1000 L224,1000" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- 后端服务 -> 云服务列（汇总干线 + 分支） -->
+  <path d="M1060,515 L1420,515" fill="none" stroke="#37474f" stroke-width="2"/>
+  <path d="M1420,375 L1420,915" fill="none" stroke="#37474f" stroke-width="2"/>
+  <text x="1160" y="505" font-size="17" fill="#455a64">后端服务按需访问</text>
+  <path d="M1420,375 L1485,375" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <path d="M1420,465 L1485,465" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <path d="M1420,555 L1485,555" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <path d="M1420,645 L1485,645" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <path d="M1420,735 L1485,735" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <path d="M1420,825 L1485,825" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <path d="M1420,915 L1485,915" fill="none" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- 模型服务 -> 云服务（汇入干线） -->
+  <path d="M730,680 L730,705 L1420,705" fill="none" stroke="#37474f" stroke-width="2"/>
+  <text x="1150" y="698" font-size="17" fill="#455a64">模型服务按需访问</text>
+
+  <!-- 云服务列 -->
+  <rect x="1470" y="300" width="240" height="700" rx="12" fill="#f1f5f0" stroke="#6b8e23" stroke-width="2"/>
+  <text x="1590" y="330" font-size="23" font-weight="bold" text-anchor="middle" fill="#4a6119">云服务</text>
+  <rect x="1485" y="340" width="210" height="70" rx="8" fill="#ffffff" stroke="#6b8e23" stroke-width="1.5"/>
+  <text x="1590" y="382" font-size="20" text-anchor="middle" fill="#33691e">SFS（文件存储）</text>
+  <rect x="1485" y="430" width="210" height="70" rx="8" fill="#ffffff" stroke="#6b8e23" stroke-width="1.5"/>
+  <text x="1590" y="465" font-size="20" text-anchor="middle" fill="#33691e">RDS for PostgreSQL</text>
+  <rect x="1485" y="520" width="210" height="70" rx="8" fill="#ffffff" stroke="#6b8e23" stroke-width="1.5"/>
+  <text x="1590" y="562" font-size="20" text-anchor="middle" fill="#33691e">LTS（日志）</text>
+  <rect x="1485" y="610" width="210" height="70" rx="8" fill="#ffffff" stroke="#6b8e23" stroke-width="1.5"/>
+  <text x="1590" y="645" font-size="20" text-anchor="middle" fill="#33691e">Kafka（DMS）</text>
+  <rect x="1485" y="700" width="210" height="70" rx="8" fill="#ffffff" stroke="#6b8e23" stroke-width="1.5"/>
+  <text x="1590" y="742" font-size="20" text-anchor="middle" fill="#33691e">华为云 GES（图谱）</text>
+  <rect x="1485" y="790" width="210" height="70" rx="8" fill="#ffffff" stroke="#6b8e23" stroke-width="1.5"/>
+  <text x="1590" y="825" font-size="20" text-anchor="middle" fill="#33691e">DCS（Redis）</text>
+  <rect x="1485" y="880" width="210" height="70" rx="8" fill="#ffffff" stroke="#6b8e23" stroke-width="1.5"/>
+  <text x="1590" y="915" font-size="20" text-anchor="middle" fill="#33691e">reranker&amp;LLM服务</text>
+  <text x="1590" y="939" font-size="18" text-anchor="middle" fill="#546e7a">（华为云 AI）</text>
+
+  <!-- 图例 -->
+  <rect x="30" y="600" width="180" height="120" rx="8" fill="#fafafa" stroke="#b0bec5" stroke-width="1"/>
+  <text x="45" y="625" font-size="18" font-weight="bold" fill="#455a64">图例</text>
+  <path d="M45,645 L105,645" stroke="#37474f" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="115" y="650" font-size="16" fill="#455a64">访问/调用</text>
+  <path d="M45,672 L105,672" stroke="#37474f" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arr)"/>
+  <text x="115" y="677" font-size="16" fill="#455a64">出公网/日志</text>
+  <rect x="45" y="692" width="60" height="14" fill="none" stroke="#2e7d32" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="115" y="704" font-size="16" fill="#455a64">安全组边界</text>
+</svg>

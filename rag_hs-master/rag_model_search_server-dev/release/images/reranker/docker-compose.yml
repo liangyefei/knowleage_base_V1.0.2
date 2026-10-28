@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  coreb-reranker:
+    build: .
+    container_name: coreb-reranker
+    ports:
+      - "16603:16603"
+    volumes:
+      - /data/models/coreb-code-reranker:/data/models/coreb-code-reranker:ro
+      - ./cache:/app/cache
+    environment:
+      - PORT=16603
+      - MODEL_PATH=/data/models/coreb-code-reranker
+      - CUDA_VISIBLE_DEVICES=0
+      - TORCH_CUDA_ARCH_LIST=8.0;8.6;8.9;9.0
+    restart: unless-stopped
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu, compute, utility]

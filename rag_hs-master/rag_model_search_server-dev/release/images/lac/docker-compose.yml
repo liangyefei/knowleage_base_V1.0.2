@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  lac:
+    build: .
+    image: haisi-lac:latest
+    container_name: haisi-lac
+    ports:
+      - "5955:5955"
+    environment:
+      - PORT=5955
+    restart: unless-stopped

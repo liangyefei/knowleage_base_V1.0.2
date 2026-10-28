@@ -1,0 +1,93 @@
+version: '3.8'
+
+# ===========================================================================
+# Kafka 本地开发环境（KRaft 模式，无需 Zookeeper）
+#
+# 用途：haisi_rag_models_server 知识库文档处理消息队列的本地替代环境
+#   - 生产/测试环境使用华为云 DMS Kafka（三节点集群）
+#   - 本地无 Kafka 环境时，用本 compose 启动单节点 Kafka 替代
+#
+# 对接关系（详见 params/server_config.yaml COMM_KAFKA_ADDRESS）：
+#   出站 topic (Backend -> Model): kb-document-processing  (16 分区, key=kbId)
+#   入站 topic (Model -> Backend): kb-document-processed   (8 分区, key=documentId)
+#   消费者组: model-service
+#
+# 网络拓扑：
+#   模型容器 haisi_rag_models_server_dev 接入 kafka-net 后，
+#   通过 haisi-kafka-dev:9092 直连 Kafka（与 server_config.yaml 配置一致）
+# ===========================================================================
+
+services:
+  kafka:
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/bitnami/kafka:3.7
+    container_name: haisi-kafka-dev
+    ports:
+      - "9092:9092"   # INTERNAL：容器间通信（模型容器通过 haisi-kafka-dev:9092 接入）
+      - "9094:9094"   # EXTERNAL：宿主机测试（localhost:9094）
+    environment:
+      # -------------------- KRaft 模式配置（替代 Zookeeper） --------------------
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@haisi-kafka-dev:9093
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # -------------------- 监听器配置 --------------------
+      # INTERNAL：容器间通信，advertised 为 haisi-kafka-dev:9092（模型容器接入 kafka-net 后直连）
+      # EXTERNAL：宿主机测试，advertised 为 localhost:9094（仅用于本机 kafka-console-* 工具调试）
+      KAFKA_CFG_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_CFG_ADVERTISED_LISTENERS: INTERNAL://haisi-kafka-dev:9092,EXTERNAL://localhost:9094
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      # -------------------- Topic 默认配置 --------------------
+      KAFKA_CFG_NUM_PARTITIONS: 16
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      # 本地开发允许自动创建 topic（生产环境关闭，由 DMS 托管）
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      # offset 保留 7 天（本地开发够用，避免磁盘膨胀）
+      KAFKA_CFG_LOG_RETENTION_HOURS: 168
+      # 单条消息最大 10MB（知识库文档处理消息较大）
+      KAFKA_CFG_MESSAGE_MAX_BYTES: 10485760
+      KAFKA_CFG_REPLICA_FETCH_MAX_BYTES: 10485760
+
+      # -------------------- JVM 堆配置 --------------------
+      # 单节点本地开发，1GB 堆足够
+      KAFKA_HEAP_OPTS: "-Xmx1G -Xms1G"
+
+    volumes:
+      - kafka_data:/bitnami/kafka
+    networks:
+      - kafka-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # -------------------- 主题初始化容器 --------------------
+  # kafka 启动后自动创建两个业务 topic，执行完即退出
+  kafka-init-topics:
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/bitnami/kafka:3.7
+    container_name: haisi-kafka-init-topics
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "/init/create-topics.sh"]
+    volumes:
+      - ./create-topics.sh:/init/create-topics.sh:ro
+    networks:
+      - kafka-net
+    restart: "no"
+
+volumes:
+  kafka_data:
+    driver: local
+
+networks:
+  kafka-net:
+    name: kafka-net
+    driver: bridge

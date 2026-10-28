@@ -1,0 +1,146 @@
+# =============================================================================
+# MemMachine 服务配置文件（configuration.yml）
+#
+# 通过 docker-compose.yml 挂载到容器内 /app/configuration.yml
+#   volumes:
+#     - ./configuration.yml:/app/configuration.yml:rw
+#
+# 修改后重启 memmachine 容器生效：
+#   docker compose restart memmachine
+#
+# 配置结构参考 MemMachine.md §10；顶层资源 ID（如 glm_model、aliyun_embedder、
+# profile_storage）在 episodic_memory / semantic_memory / episode_store /
+# session_manager 中被引用，服务启动时统一在 resources.* 下解析。
+#
+# 凭证引用：password / api_key 字段支持 $ENV 或 ${ENV} 语法，从环境变量
+# 注入（见 mixin_confs.py 的 WithValueFromEnv / PasswordMixin / ApiKeyMixin）。
+# 实际值在 docker-compose.yml → .env 中设置，避免在配置文件中硬编码密钥。
+# =============================================================================
+
+# ── 日志 ─────────────────────────────────────────────────────────────
+logging:
+  path: /tmp/memory_logs/mem-machine.log
+  level: info                      # info | debug | error
+
+# ── Episode 存储（对话记录持久化）─────────────────────────────────────
+episode_store:
+  database: profile_storage        # 引用 resources.databases.profile_storage
+
+# ── 情景记忆（跨会话对话上下文）───────────────────────────────────────
+episodic_memory:
+  long_term_memory:
+    # event 模式：使用 VectorStore + SegmentStore（非 Neo4j 声明式后端）
+    # 适合轻量部署；如需图查询能力可改 backend: declarative + vector_graph_store
+    backend: event
+    embedder: aliyun_embedder      # 引用 resources.embedders.aliyun_embedder
+    vector_store: event_vector_store      # 引用 resources.databases.event_vector_store
+    segment_store: profile_storage        # 引用 resources.databases.profile_storage
+  short_term_memory:
+    llm_model: glm_model           # 引用 resources.language_models.glm_model
+    message_capacity: 500          # 短期上下文保留的最近消息数
+
+# ── 检索代理（agent_mode=true 时启用，见 §5.7）────────────────────────
+retrieval_agent:
+  llm_model: glm_model
+  reranker: my_reranker_id         # 引用 resources.rerankers.my_reranker_id
+
+# ── 语义记忆（用户事实、偏好、知识）──────────────────────────────────
+semantic_memory:
+  llm_model: glm_model
+  embedding_model: aliyun_embedder
+  database: profile_storage        # 元数据存储
+  config_database: profile_storage # 配置存储
+  storage_backend: vector_store    # 使用 vector_store 后端（非图）
+  feature_store: profile_storage
+  vector_collection: semantic_vector_store  # 引用 resources.databases.semantic_vector_store
+  vector_dimensions: 1024          # text-embedding-v3 输出维度
+  vector_similarity_metric: cosine
+
+# ── 会话管理器 ────────────────────────────────────────────────────────
+session_manager:
+  database: profile_storage
+
+# ── 默认项目类别（Profile 记忆提取 prompt）───────────────────────────
+prompt:
+  default_project_categories:
+    - profile_prompt
+    # 可选：crm_prompt / health_assistant_prompt / financial_analyst_prompt
+    # / writing_assistant_prompt / coding_style_prompt
+
+# =============================================================================
+# 资源定义（resources）
+# 顶层 ID 在上方被引用；服务启动时统一解析
+# =============================================================================
+resources:
+  # ── 数据库 ──────────────────────────────────────────────────────────
+  databases:
+    # PostgreSQL：Profile/Episode/Session/Semantic 元数据存储
+    # password 用 $POSTGRES_PASSWORD 引用 .env 中的 POSTGRES_PASSWORD
+    profile_storage:
+      provider: postgres
+      config:
+        host: postgres              # docker-compose 服务名
+        port: 5432
+        user: memmachine
+        password: $POSTGRES_PASSWORD
+        db_name: memmachine
+        pool_size: 5
+        max_overflow: 10
+        pool_timeout: 30
+        pool_recycle: -1
+        pool_pre_ping: false
+
+    # SQLite 向量库：事件向量索引（event 模式后端）
+    event_vector_store:
+      provider: sqlite_vector_store
+      config:
+        path: /tmp/event_vectors.db
+        vector_search_engine: usearch   # usearch | hnswlib
+        index_directory: /tmp/event_vector_indexes
+        save_threshold: 1000
+
+    # SQLite 向量库：语义向量索引
+    semantic_vector_store:
+      provider: sqlite_vector_store
+      config:
+        path: /tmp/semantic_vectors.db
+        vector_search_engine: usearch
+        index_directory: /tmp/semantic_vector_indexes
+        save_threshold: 1000
+
+  # ── 嵌入模型 ────────────────────────────────────────────────────────
+  # 阿里云 DashScope（OpenAI 兼容 endpoint）text-embedding-v3
+  # api_key 用 $ALIYUN_API_KEY 引用 .env 中的 ALIYUN_API_KEY
+  embedders:
+    aliyun_embedder:
+      provider: openai
+      config:
+        max_input_length: 2048
+        model: "text-embedding-v3"
+        api_key: $ALIYUN_API_KEY
+        base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        dimensions: 1024
+
+  # ── 语言模型 ────────────────────────────────────────────────────────
+  # 智谱 GLM-4-Flash（OpenAI 兼容 endpoint）
+  # api_key 用 $GLM_API_KEY 引用 .env 中的 GLM_API_KEY
+  language_models:
+    glm_model:
+      provider: openai-chat-completions
+      config:
+        model: "glm-4-flash"
+        api_key: $GLM_API_KEY
+        base_url: "https://open.bigmodel.cn/api/paas/v4/"
+
+  # ── 重排器（RRF 混合：identity + BM25）──────────────────────────────
+  rerankers:
+    my_reranker_id:
+      provider: "rrf-hybrid"
+      config:
+        reranker_ids:
+          - id_ranker_id
+          - bm_ranker_id
+    id_ranker_id:
+      provider: "identity"
+    bm_ranker_id:
+      provider: "bm25"

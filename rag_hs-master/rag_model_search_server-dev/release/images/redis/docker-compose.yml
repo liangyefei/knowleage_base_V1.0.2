@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  redis:
+    build: .
+    image: haisi-redis:7-alpine
+    container_name: haisi-redis-server
+    restart: always
+    ports:
+      - "16379:6379"
+    volumes:
+      - /data/redis/data:/data
+    environment:
+      - TZ=Asia/Shanghai
+      - REDIS_PASSWORD=farai123
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "farai123", "ping"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3

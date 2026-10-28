@@ -1,0 +1,18 @@
+{
+  "_comment": "环境标签配置 + 域名 → 环境映射。部署后修改此文件无需重新打包。",
+
+  "environments": {
+    "dev":     { "label": "DEV" },
+    "sit":     { "label": "SIT" },
+    "release": { "label": "RELEASE" }
+  },
+
+  "hostMapping": [
+    { "hosts": ["139.9.104.64"],           "envKey": "dev" },
+    { "hosts": ["113.45.181.210"],         "envKey": "sit" },
+    { "hosts": ["121.37.234.19"],          "envKey": "release" },
+    { "hosts": ["localhost", "127.0.0.1"], "envKey": "dev" }
+  ],
+
+  "_defaults": { "unknownHostFallbackEnv": "dev" }
+}

@@ -1,0 +1,42 @@
+# Line-ending policy — prevents CRLF/LF cross-platform issues.
+#
+# After adding this file, normalize the existing working tree once:
+#   git add --renormalize .
+#   git commit -m "chore: normalize line endings"
+#
+# Shell scripts — always LF (prevents the '/usr/bin/env: bash\r' shebang error
+# when scripts are edited on Windows and run inside WSL/Linux containers).
+*.sh     text eol=lf
+*.bash   text eol=lf
+
+# Dockerfiles — LF (BuildKit parses them on Linux)
+Dockerfile* text eol=lf
+
+# Python — LF
+*.py     text eol=lf
+
+# Config / data — LF
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.json   text eol=lf
+*.toml   text eol=lf
+*.cfg    text eol=lf
+*.ini    text eol=lf
+
+# PowerShell / batch — CRLF (Windows native; PS parser tolerates LF but
+# older tooling and notepad expect CRLF)
+*.ps1    text eol=crlf
+*.bat    text eol=crlf
+*.cmd    text eol=crlf
+
+# Binary — never normalize
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.pdf    binary
+*.whl    binary
+*.zip    binary
+*.tar.gz binary
+*.tgz    binary

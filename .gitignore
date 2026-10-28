@@ -1,0 +1,10 @@
+# Live credentials. Keep these files local; do not publish them.
+rag_hs-master/rag_model_search_server-dev/params/**/model_config.yaml
+rag_hs-master/rag_model_search_server-dev/params/**/kb_config.yaml
+rag_hs-master/rag_model_search_server-dev/open_source/memmachine/configuration.yml
+rag_hs-master/rag_model_search_server-dev/release/k8s/dev/v1.0.8/haisi-mempalace-rest.yaml
+rag_hs-master/rag_model_search_server-dev/release/k8s/dev/v1.0.8/haisi-rag-ingestion.yaml
+rag_hs-master/rag_model_search_server-dev/release/k8s/test/v1.0.8/haisi-mempalace-rest.yaml
+rag_hs-master/rag_model_search_server-dev/release/k8s/test/v1.0.8/haisi-rag-ingestion.yaml
+rag_hs-master/rag_model_search_server-dev/release/k8s/test/v1.0.8/memmachine-config.yaml
+rag_hs-master/rag_model_search_server-dev/release/k8s/test/v1.0.8/rag-models-config.yaml

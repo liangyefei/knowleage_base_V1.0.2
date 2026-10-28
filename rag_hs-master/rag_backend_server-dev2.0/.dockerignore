@@ -1,0 +1,9 @@
+*
+!build/*-runner
+!build/*-runner.jar
+!build/lib/*
+!build/quarkus-app/*
+# quarkus-awt（POI/PDFBox 文档抽取）：native 产出的 awt 相关动态库，运行时必须随镜像分发
+!build/*.so
+# RAR5 外部解压工具（方案 B）：官方静态 7zz，运行时必须随镜像分发（download7zz 任务产出于 build/7zz）
+!build/7zz

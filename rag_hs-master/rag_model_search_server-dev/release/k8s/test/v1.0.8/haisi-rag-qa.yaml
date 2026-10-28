@@ -1,0 +1,450 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: haisi-rag-qa
+  namespace: default
+  uid: 2539fda4-f8c7-4c50-b477-e80cf5b84c5e
+  resourceVersion: '11406943'
+  generation: 4
+  creationTimestamp: '2026-09-24T08:05:44Z'
+  labels:
+    appgroup: ''
+    version: v1
+  annotations:
+    deployment.kubernetes.io/revision: '3'
+    description: haisi-rag-qa模型端问答api服务
+    workload.cce.io/swr-version: '[{"version":"Private Edition"}]'
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: apps/v1
+      time: '2026-10-08T07:15:52Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:description: {}
+            f:workload.cce.io/swr-version: {}
+          f:labels:
+            .: {}
+            f:appgroup: {}
+            f:version: {}
+        f:spec:
+          f:progressDeadlineSeconds: {}
+          f:replicas: {}
+          f:revisionHistoryLimit: {}
+          f:selector: {}
+          f:strategy:
+            f:rollingUpdate:
+              .: {}
+              f:maxSurge: {}
+              f:maxUnavailable: {}
+            f:type: {}
+          f:template:
+            f:metadata:
+              f:annotations:
+                .: {}
+                f:pod.cce.io/tags: {}
+                f:redeploy-timestamp: {}
+                f:resource.cce.io/instance-type: {}
+              f:labels:
+                .: {}
+                f:app: {}
+                f:version: {}
+            f:spec:
+              f:containers:
+                k:{"name":"container-haisi-rag-qa"}:
+                  .: {}
+                  f:env:
+                    .: {}
+                    k:{"name":"DUAL_MCP_AUTO_INDEX"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"FILE_VERSION_AREA"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"HAISI_RUN_MODE"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"INGESTION_API_URL"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"LANGCHAIN_HIDE_DEPRECATION_WARNINGS"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        .: {}
+                        f:configMapKeyRef: {}
+                    k:{"name":"PAAS_APP_NAME"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"PAAS_NAMESPACE"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"PAAS_PROJECT_ID"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"PYTHONWARNINGS"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        .: {}
+                        f:configMapKeyRef: {}
+                    k:{"name":"TF_ENABLE_ONEDNN_OPTS"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        .: {}
+                        f:configMapKeyRef: {}
+                    k:{"name":"TOKENIZERS_PARALLELISM"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        .: {}
+                        f:configMapKeyRef: {}
+                    k:{"name":"UVICORN_LOG_LEVEL"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        .: {}
+                        f:configMapKeyRef: {}
+                  f:image: {}
+                  f:imagePullPolicy: {}
+                  f:livenessProbe:
+                    .: {}
+                    f:failureThreshold: {}
+                    f:httpGet:
+                      .: {}
+                      f:path: {}
+                      f:port: {}
+                      f:scheme: {}
+                    f:initialDelaySeconds: {}
+                    f:periodSeconds: {}
+                    f:successThreshold: {}
+                    f:timeoutSeconds: {}
+                  f:name: {}
+                  f:readinessProbe:
+                    .: {}
+                    f:failureThreshold: {}
+                    f:httpGet:
+                      .: {}
+                      f:path: {}
+                      f:port: {}
+                      f:scheme: {}
+                    f:periodSeconds: {}
+                    f:successThreshold: {}
+                    f:timeoutSeconds: {}
+                  f:resources:
+                    .: {}
+                    f:limits:
+                      .: {}
+                      f:cpu: {}
+                      f:memory: {}
+                    f:requests:
+                      .: {}
+                      f:cpu: {}
+                      f:memory: {}
+                  f:startupProbe:
+                    .: {}
+                    f:failureThreshold: {}
+                    f:httpGet:
+                      .: {}
+                      f:path: {}
+                      f:port: {}
+                      f:scheme: {}
+                    f:initialDelaySeconds: {}
+                    f:periodSeconds: {}
+                    f:successThreshold: {}
+                    f:timeoutSeconds: {}
+                  f:terminationMessagePath: {}
+                  f:terminationMessagePolicy: {}
+                  f:volumeMounts:
+                    .: {}
+                    k:{"mountPath":"/kb-files"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                    k:{"mountPath":"/kw"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                    k:{"mountPath":"/workspace/haisi_rag_models_server/params/basic_config.yaml"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                      f:readOnly: {}
+                      f:subPath: {}
+                    k:{"mountPath":"/workspace/haisi_rag_models_server/params/kb_config.yaml"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                      f:readOnly: {}
+                      f:subPath: {}
+                    k:{"mountPath":"/workspace/haisi_rag_models_server/params/model_config.yaml"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                      f:readOnly: {}
+                      f:subPath: {}
+                    k:{"mountPath":"/workspace/haisi_rag_models_server/params/prompt_templates.yaml"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                      f:readOnly: {}
+                      f:subPath: {}
+                    k:{"mountPath":"/workspace/haisi_rag_models_server/params/server_config.yaml"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                      f:readOnly: {}
+                      f:subPath: {}
+              f:dnsPolicy: {}
+              f:imagePullSecrets:
+                .: {}
+                k:{"name":"default-secret"}: {}
+              f:restartPolicy: {}
+              f:schedulerName: {}
+              f:securityContext: {}
+              f:terminationGracePeriodSeconds: {}
+              f:tolerations: {}
+              f:volumes:
+                .: {}
+                k:{"name":"pvc-efs-kw"}:
+                  .: {}
+                  f:name: {}
+                  f:persistentVolumeClaim:
+                    .: {}
+                    f:claimName: {}
+                k:{"name":"pvc-kb-files"}:
+                  .: {}
+                  f:name: {}
+                  f:persistentVolumeClaim:
+                    .: {}
+                    f:claimName: {}
+                k:{"name":"vol-179023699546532721"}:
+                  .: {}
+                  f:configMap:
+                    .: {}
+                    f:defaultMode: {}
+                    f:name: {}
+                  f:name: {}
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: apps/v1
+      time: '2026-10-08T07:15:52Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            f:deployment.kubernetes.io/revision: {}
+        f:status:
+          f:availableReplicas: {}
+          f:conditions:
+            .: {}
+            k:{"type":"Available"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+            k:{"type":"Progressing"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+          f:observedGeneration: {}
+          f:readyReplicas: {}
+          f:replicas: {}
+          f:terminatingReplicas: {}
+          f:updatedReplicas: {}
+      subresource: status
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: haisi-rag-qa
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: haisi-rag-qa
+        version: v1
+      annotations:
+        pod.cce.io/tags: '{"CCE-Cluster-ID":"80d810f0-b565-11f1-8a63-0255ac100323","CCE-Namespace":"default"}'
+        redeploy-timestamp: '1790239013441'
+        resource.cce.io/instance-type: general-computing
+    spec:
+      volumes:
+        - name: vol-179023699546532721
+          configMap:
+            name: rag-models-config
+            defaultMode: 420
+        - name: pvc-efs-kw
+          persistentVolumeClaim:
+            claimName: pvc-efs-kw
+        - name: pvc-kb-files
+          persistentVolumeClaim:
+            claimName: pvc-kb-files
+      containers:
+        - name: container-haisi-rag-qa
+          image: swr.cn-south-1.myhuaweicloud.com/hisilicon-rag/haisi-rag-qa:v2.0
+          env:
+            - name: PAAS_APP_NAME
+              value: haisi-rag-qa
+            - name: PAAS_NAMESPACE
+              value: default
+            - name: PAAS_PROJECT_ID
+              value: 57dba659283c4cfda3632e06e6f8097c
+            - name: FILE_VERSION_AREA
+              value: /kb-files/.file-versions
+            - name: LANGCHAIN_HIDE_DEPRECATION_WARNINGS
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-models-config
+                  key: LANGCHAIN_HIDE_DEPRECATION_WARNINGS
+            - name: PYTHONWARNINGS
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-models-config
+                  key: PYTHONWARNINGS
+            - name: TF_ENABLE_ONEDNN_OPTS
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-models-config
+                  key: TF_ENABLE_ONEDNN_OPTS
+            - name: TOKENIZERS_PARALLELISM
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-models-config
+                  key: TOKENIZERS_PARALLELISM
+            - name: UVICORN_LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: rag-models-config
+                  key: UVICORN_LOG_LEVEL
+            - name: HAISI_RUN_MODE
+              value: qa
+            - name: DUAL_MCP_AUTO_INDEX
+              value: '0'
+            - name: INGESTION_API_URL
+              value: http://haisi-rag-ingestion:7861/kw
+          resources:
+            limits:
+              cpu: '4'
+              memory: 4Gi
+            requests:
+              cpu: '4'
+              memory: 4Gi
+          volumeMounts:
+            - name: vol-179023699546532721
+              readOnly: true
+              mountPath: /workspace/haisi_rag_models_server/params/basic_config.yaml
+              subPath: basic_config.yaml
+            - name: vol-179023699546532721
+              readOnly: true
+              mountPath: /workspace/haisi_rag_models_server/params/kb_config.yaml
+              subPath: kb_config.yaml
+            - name: vol-179023699546532721
+              readOnly: true
+              mountPath: /workspace/haisi_rag_models_server/params/model_config.yaml
+              subPath: model_config.yaml
+            - name: vol-179023699546532721
+              readOnly: true
+              mountPath: /workspace/haisi_rag_models_server/params/prompt_templates.yaml
+              subPath: prompt_templates.yaml
+            - name: vol-179023699546532721
+              readOnly: true
+              mountPath: /workspace/haisi_rag_models_server/params/server_config.yaml
+              subPath: server_config.yaml
+            - name: pvc-efs-kw
+              mountPath: /kw
+            - name: pvc-kb-files
+              mountPath: /kb-files
+          livenessProbe:
+            httpGet:
+              path: /kw/health
+              port: 7861
+              scheme: HTTP
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /kw/health
+              port: 7861
+              scheme: HTTP
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /kw/health
+              port: 7861
+              scheme: HTTP
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
+            periodSeconds: 5
+            successThreshold: 1
+            failureThreshold: 20
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      imagePullSecrets:
+        - name: default-secret
+      schedulerName: default-scheduler
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+status:
+  observedGeneration: 4
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  terminatingReplicas: 0
+  conditions:
+    - type: Available
+      status: 'True'
+      lastUpdateTime: '2026-09-24T08:37:47Z'
+      lastTransitionTime: '2026-09-24T08:37:47Z'
+      reason: MinimumReplicasAvailable
+      message: Deployment has minimum availability.
+    - type: Progressing
+      status: 'True'
+      lastUpdateTime: '2026-09-29T03:00:22Z'
+      lastTransitionTime: '2026-09-24T08:36:55Z'
+      reason: NewReplicaSetAvailable
+      message: ReplicaSet "haisi-rag-qa-59b5d865c6" has successfully progressed.

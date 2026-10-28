@@ -1,0 +1,74 @@
+# LAC 中文分词微服务 — 集群部署清单（2026-08-27 已上线）
+# 镜像：同事构建的 haisi-lac:1.0（paddle 2.6.1 + paddlenlp + LAC 模型 + app.py 全内置）
+# 用途：mempalace G3 查询归一化调 POST /p/lac 做词性标注过滤虚词（LAC_SERVICE_URL env）
+# 注意：私有仓库镜像必须带 imagePullSecrets: default-secret（漏了会 ImagePullBackOff 401）
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: haisi-lac-hotfix
+  namespace: default
+data:
+  app.py: |
+    # 热更挂载点（内容与镜像内 app.py 一致，见本目录 app.py）
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: haisi-lac-service
+  namespace: default
+  labels:
+    app: haisi-lac-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: haisi-lac-service
+  template:
+    metadata:
+      labels:
+        app: haisi-lac-service
+    spec:
+      imagePullSecrets:
+        - name: default-secret
+      containers:
+        - name: lac
+          image: swr.cn-south-1.myhuaweicloud.com/hisilicon-rag/haisi-lac:1.0
+          env:
+            - name: PORT
+              value: "5955"
+          ports:
+            - containerPort: 5955
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: "1"
+              memory: 4Gi
+          volumeMounts:
+            - name: hotfix
+              mountPath: /app/app.py
+              subPath: app.py
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5955
+            periodSeconds: 10
+            failureThreshold: 24
+            initialDelaySeconds: 30
+      volumes:
+        - name: hotfix
+          configMap:
+            name: haisi-lac-hotfix
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: haisi-lac-service
+  namespace: default
+spec:
+  selector:
+    app: haisi-lac-service
+  ports:
+    - port: 5955
+      targetPort: 5955

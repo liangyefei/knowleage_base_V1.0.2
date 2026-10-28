@@ -1,0 +1,13 @@
+# 开发与测试依赖（UD 门禁、覆盖率度量、单测 mock、静态检查）
+# 与运行时依赖 docker/requirements.txt 分离
+pytest>=7.0
+pytest-cov>=4.0
+coverage>=7.0
+pytest-mock>=3.0
+
+# ==================== 静态检查工具（B0 批次引入）====================
+# 详见 docs/todo/代码扫描问题改造计划.md
+# 版本说明：pylint 3.2.x 支持 pyproject.toml 路径级 disable；ruff 0.6.x 提供 B/F/W/E/UP 规则集
+pylint==3.2.7
+ruff==0.6.9
+autopep8==2.3.2

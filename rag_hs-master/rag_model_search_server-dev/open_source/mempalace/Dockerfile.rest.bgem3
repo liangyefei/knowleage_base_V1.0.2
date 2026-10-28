@@ -1,0 +1,55 @@
+# syntax=docker/dockerfile:1.7
+#
+# MemPalace REST adapter image WITH the BGE-M3 embedding path (GPU torch).
+#
+# Layers torch (GPU) + sentence-transformers onto the lean haisi-mempalace:rest image
+# so the BGE-M3 embedder (MEMPALACE_EMBEDDING_MODEL=bgem3) runs on CUDA. Kept as
+# a separate variant so the base haisi-mempalace:rest stays lean.
+#
+# WHY GPU torch + manual wheel: RTX 5090 is Blackwell (compute capability sm_120),
+# which requires a CUDA >= 12.8 build — only the cu128 wheel has sm_120 kernels.
+# The cu128 wheel is ~782 MB and slow to fetch at build time, so it is downloaded
+# manually out-of-band (see below) and installed from the local file.
+#
+# ── Step 1: download the wheel manually (one time) ──────────────────────────
+#   mkdir -p wheels && cd wheels
+#   wget -O torch-2.11.0+cu128-cp312-cp312-manylinux_2_28_x86_64.whl \
+#     "https://download-r2.pytorch.org/whl/cu128/torch-2.11.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl"
+#   (782 MB; cu128 = the only index that ships Blackwell sm_120 kernels)
+#
+# ── Step 2: build (requires haisi-mempalace:rest to exist first) ──────────────
+#   docker build -t haisi-mempalace:rest-bgem3 -f Dockerfile.rest.bgem3 .
+#
+# ── Step 3: run on GPU ───────────────────────────────────────────────────────
+#   docker run -d --gpus all -p 8777:8777 -v mempalace-data:/data \
+#     -v /disk/models/bge-m3:/models/bge-m3:ro \
+#     -e MEMPALACE_REST_HOST=0.0.0.0 -e MEMPALACE_REST_NO_AUTH=1 \
+#     -e MEMPALACE_EMBEDDING_MODEL=bgem3 \
+#     -e MEMPALACE_BGE_M3_PATH=/models/bge-m3 \
+#     -e MEMPALACE_EMBEDDING_DEVICE=cuda \
+#     haisi-mempalace:rest-bgem3
+
+FROM haisi-mempalace:rest
+
+USER root
+# Install the manually-downloaded GPU torch wheel (cu128 / Blackwell), then let
+# pip pull sentence-transformers + its smaller deps (transformers, tokenizers,
+# scipy, …) from the default index at build time. The base mempalace:rest image
+# already bootstrapped pip into the venv.
+#
+# Copy the wheels dir wholesale and install via a glob so pip sees the wheel's
+# ORIGINAL filename (pip parses the version/python-tag from the filename, so a
+# renamed-to-torch.whl copy would be rejected as "not a valid wheel filename").
+COPY wheels /tmp/wheels
+RUN /app/.venv/bin/python -m pip install --no-cache-dir /tmp/wheels/*.whl \
+    && /app/.venv/bin/python -m pip install --no-cache-dir sentence-transformers \
+    && rm -rf /tmp/wheels
+
+# Overlay the patched embedding.py (adds the bgem3 branch) onto the installed
+# package. haisi-mempalace:latest was baked BEFORE the embedding.py edit, so without
+# this the `bgem3` model name silently falls through to minilm. Placing this
+# COPY *after* the expensive torch layer keeps that layer cached on rebuild.
+COPY mempalace/embedding.py /app/.venv/lib/python3.12/site-packages/mempalace/embedding.py
+
+USER mempalace
+# haisi-mempalace:rest already sets ENTRYPOINT/ENV/HOME; nothing else to override.

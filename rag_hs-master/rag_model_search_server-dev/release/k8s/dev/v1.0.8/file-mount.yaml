@@ -1,0 +1,304 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: file-mount
+  namespace: default
+  uid: a37efc45-d532-41b8-af45-6ba5e6436733
+  resourceVersion: '29287342'
+  generation: 7
+  creationTimestamp: '2026-08-13T14:16:41Z'
+  labels:
+    appgroup: ''
+    version: v1
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+    description: ''
+    workload.cce.io/swr-version: '[{"version":"Private Edition"}]'
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: apps/v1
+      time: '2026-09-22T01:57:46Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:description: {}
+            f:workload.cce.io/swr-version: {}
+          f:labels:
+            .: {}
+            f:appgroup: {}
+            f:version: {}
+        f:spec:
+          f:progressDeadlineSeconds: {}
+          f:replicas: {}
+          f:revisionHistoryLimit: {}
+          f:selector: {}
+          f:strategy:
+            f:rollingUpdate:
+              .: {}
+              f:maxSurge: {}
+              f:maxUnavailable: {}
+            f:type: {}
+          f:template:
+            f:metadata:
+              f:annotations:
+                .: {}
+                f:pod.cce.io/tags: {}
+                f:resource.cce.io/instance-type: {}
+              f:labels:
+                .: {}
+                f:app: {}
+                f:version: {}
+            f:spec:
+              f:containers:
+                k:{"name":"container-mount"}:
+                  .: {}
+                  f:env:
+                    .: {}
+                    k:{"name":"KAFKA_BOOTSTRAP_SERVERS"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        .: {}
+                        f:configMapKeyRef: {}
+                    k:{"name":"PAAS_APP_NAME"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"PAAS_NAMESPACE"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"PAAS_PROJECT_ID"}:
+                      .: {}
+                      f:name: {}
+                      f:value: {}
+                    k:{"name":"QUARKUS_DATASOURCE_PASSWORD"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        .: {}
+                        f:secretKeyRef: {}
+                    k:{"name":"QUARKUS_REDIS_PASSWORD"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        .: {}
+                        f:secretKeyRef: {}
+                    k:{"name":"RSA_PRIVATE_KEY"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        .: {}
+                        f:secretKeyRef: {}
+                    k:{"name":"RSA_PUBLIC_KEY"}:
+                      .: {}
+                      f:name: {}
+                      f:valueFrom:
+                        .: {}
+                        f:configMapKeyRef: {}
+                  f:image: {}
+                  f:imagePullPolicy: {}
+                  f:name: {}
+                  f:resources:
+                    .: {}
+                    f:limits:
+                      .: {}
+                      f:cpu: {}
+                      f:memory: {}
+                    f:requests:
+                      .: {}
+                      f:cpu: {}
+                      f:memory: {}
+                  f:terminationMessagePath: {}
+                  f:terminationMessagePolicy: {}
+                  f:volumeMounts:
+                    .: {}
+                    k:{"mountPath":"/efs"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                    k:{"mountPath":"/work/config/application.yaml"}:
+                      .: {}
+                      f:mountPath: {}
+                      f:name: {}
+                      f:readOnly: {}
+                      f:subPath: {}
+              f:dnsPolicy: {}
+              f:imagePullSecrets:
+                .: {}
+                k:{"name":"default-secret"}: {}
+              f:restartPolicy: {}
+              f:schedulerName: {}
+              f:securityContext: {}
+              f:terminationGracePeriodSeconds: {}
+              f:tolerations: {}
+              f:volumes:
+                .: {}
+                k:{"name":"pvc-efs-all"}:
+                  .: {}
+                  f:name: {}
+                  f:persistentVolumeClaim:
+                    .: {}
+                    f:claimName: {}
+                k:{"name":"vol-178663057200132688"}:
+                  .: {}
+                  f:configMap:
+                    .: {}
+                    f:defaultMode: {}
+                    f:name: {}
+                  f:name: {}
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: apps/v1
+      time: '2026-09-22T01:58:05Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            f:deployment.kubernetes.io/revision: {}
+        f:status:
+          f:availableReplicas: {}
+          f:conditions:
+            .: {}
+            k:{"type":"Available"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+            k:{"type":"Progressing"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:lastUpdateTime: {}
+              f:message: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+          f:observedGeneration: {}
+          f:readyReplicas: {}
+          f:replicas: {}
+          f:updatedReplicas: {}
+      subresource: status
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: file-mount
+      version: v1
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: file-mount
+        version: v1
+      annotations:
+        pod.cce.io/tags: '{"CCE-Cluster-ID":"bdab9c88-8a80-11f1-8bcd-0255ac100334","CCE-Namespace":"default"}'
+        resource.cce.io/instance-type: general-computing
+    spec:
+      volumes:
+        - name: pvc-efs-all
+          persistentVolumeClaim:
+            claimName: pvc-efs-all
+        - name: vol-178663057200132688
+          configMap:
+            name: backend-config
+            defaultMode: 420
+      containers:
+        - name: container-mount
+          image: swr.cn-south-1.myhuaweicloud.com/hisilicon-rag/hisilicon-knowledge-platform-service:0.1.4-SNAPSHOT
+          env:
+            - name: PAAS_APP_NAME
+              value: file-mount
+            - name: PAAS_NAMESPACE
+              value: default
+            - name: PAAS_PROJECT_ID
+              value: 57dba659283c4cfda3632e06e6f8097c
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: kafka-server
+            - name: RSA_PUBLIC_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-config
+                  key: rsa-public-key
+            - name: QUARKUS_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secert
+                  key: pg-pass
+            - name: QUARKUS_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secert
+                  key: redis-pass
+            - name: RSA_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secert
+                  key: rsa-private-key
+          resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: pvc-efs-all
+              mountPath: /efs
+            - name: vol-178663057200132688
+              readOnly: true
+              mountPath: /work/config/application.yaml
+              subPath: application.yaml
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      imagePullSecrets:
+        - name: default-secret
+      schedulerName: default-scheduler
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+status:
+  observedGeneration: 7
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  conditions:
+    - type: Progressing
+      status: 'True'
+      lastUpdateTime: '2026-08-13T14:17:02Z'
+      lastTransitionTime: '2026-08-13T14:16:41Z'
+      reason: NewReplicaSetAvailable
+      message: ReplicaSet "file-mount-59b984bbf5" has successfully progressed.
+    - type: Available
+      status: 'True'
+      lastUpdateTime: '2026-09-22T01:58:05Z'
+      lastTransitionTime: '2026-09-22T01:58:05Z'
+      reason: MinimumReplicasAvailable
+      message: Deployment has minimum availability.

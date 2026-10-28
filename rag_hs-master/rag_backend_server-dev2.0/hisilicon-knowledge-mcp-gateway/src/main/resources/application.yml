@@ -1,0 +1,207 @@
+quarkus:
+  log:
+    console:
+      enabled: true
+      format: "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%t] traceId=%X{traceId} %c.%M %s%e%n"
+  http:
+    # ⚠️ 必须与 hisilicon-knowledge-core-service（/hisilicon-knowledge）和
+    # hisilicon-knowledge-iam-service（/hisilicon-knowledge-iam）**都不同**：
+    # 测试/生产经华为云 APIG 接入，APIG 按**前缀**转发到 CCE 内的 Service，
+    # 三个服务前缀必须两两不同，同前缀下 APIG 分不开（见架构评估 §10.4）。
+    # 探针地址与本键**无关**（探针在独立管理端口的 /q/health）。
+    root-path: /hisilicon-knowledge-mcp
+    # ⚠️ 必须关掉**主动认证**（proactive authentication）。
+    # Quarkus 默认 proactive=true：**任何带凭证的请求都会被框架的认证机制先验一遍，
+    # 验不过直接 401，哪怕该路径没有任何安全策略**（官方 security-proactive-authentication
+    # 指南原话："requests with invalid credentials are rejected, even if the target page
+    # is public"）。本服务的入站凭证是**平台自签 type=mcp JWT**，由 McpAuthFilter 自己
+    # 用 commons-oidc 的 PlatformJwtVerifier 验签；框架侧没有（也不该有）能验它的机制，
+    # 于是每个带 `Authorization: Bearer` 的合法请求都会被框架拦成 401
+    # （响应体是 MCP 扩展包出来的 JSON-RPC -32005 AuthenticationFailedException）。
+    # 关掉后认证推迟到"真的有人要身份"时，本服务无人要，McpAuthFilter 成为唯一闸门。
+    # 触发背景：阶段 2 引入 commons-oidc 后其 quarkus-smallrye-jwt 传递依赖激活了
+    # Quarkus 安全层（Installed features 出现 security），才暴露这个问题。
+    auth:
+      proactive: false
+    # 业务端口统一 8080（与 core / iam 同值）：CCE 里每个服务一个 Deployment/容器，端口不冲突；
+    # 统一 8080 让 Service / 探针 / APIG 配置一致。
+    # 本机要同时起多个服务时覆盖（优先级高于本文件）：
+    #   java -Dquarkus.http.port=8089 -Dquarkus.management.port=9009 -jar ...
+    #   或环境变量 QUARKUS_HTTP_PORT / QUARKUS_MANAGEMENT_PORT
+    # ⚠️ -D 必须在 -jar 之前；写在后面会被当成应用参数忽略（本轮在 iam 上踩过）。
+    port: 8080
+    host: 0.0.0.0
+    cors:
+      enabled: true
+      origins: ${CORS_ORIGINS:*}
+      methods: GET,HEAD,POST,PUT,DELETE,PATCH,OPTIONS
+      headers: Content-Type,Authorization,Accept,X-Requested-With
+      exposed-headers: Content-Disposition,Location
+  # 管理接口独立端口：/q/health 从业务端口剥离到 9000（与 core / iam 同值）。
+  # ⚠️ 只有 health：本项目没引 micrometer/metrics 扩展，:9000/q/metrics 是 404。
+  # ⚠️ 开启后 :8080/q/health 变成 404，**CCE 的 liveness/readiness 必须指 :9000/q/health**
+  #    （否则 404 → Pod 反复重启）。
+  management:
+    enabled: true
+    port: 9000
+  # 全局禁用 Dev Services：本服务不连数据库/Redis/Kafka，也没引相关扩展；
+  # 显式关闭避免将来误引扩展时 testcontainers 探测 Docker 引擎拖慢测试。
+  devservices:
+    enabled: false
+  container-image:
+    builder: podman
+    registry: swr.cn-south-1.myhuaweicloud.com
+    group: hisilicon-rag
+  package:
+    jar:
+      enabled: false
+  native:
+    enabled: true
+    container-build: true
+    container-runtime: podman
+    # 本服务的 native 参数**故意保持最小**（照抄 iam 那套，不照抄 core）：
+    # 网关不抽取文档、不解压压缩包、不碰 AWT、不连数据库，因此不需要 core 那份
+    # charset 全量烘焙与 POI/PDFBox/Tika/AWT/zstd 的 --initialize-at-runtime 豁免。
+    # 若首次 native 构建报反射/资源缺失（MCP 扩展用了 Vert.x + Jackson），按提示补，
+    # 不要无条件复制 core 的整份参数。
+    resources:
+      # 鉴权/限额提示消息走 java.util.ResourceBundle（见 McpAuthMessages）：
+      # .properties 不是默认烘焙的资源，native 镜像里必须显式登记，否则镜像里只剩 key。
+      includes: messages/mcp_*.properties
+  application:
+    name: hisilicon-knowledge-mcp-gateway
+
+  # OpenTelemetry — 仅获取 traceId 注入 MDC，不导出 span
+  otel:
+    sdk:
+      disabled: false
+    traces:
+      exporter: none
+    service:
+      name: hisilicon-knowledge-mcp-gateway
+    propagators: tracecontext
+
+  # Redis（阶段 2 鉴权）：与 iam 同实例。iam 写吊销键（mcp:revoked:{jti}）与账号限额
+  # 覆盖（mcp:quota:{username}），网关读 + 自写统计（mcp:usage:*、mcp:token-lastused:*）。
+  redis:
+    hosts: ${QUARKUS_REDIS_HOSTS:redis://localhost:6379/0}
+    password: ${QUARKUS_REDIS_PASSWORD:}
+    timeout: 5s
+
+  locales: en-US,zh-CN
+
+# ===== MCP 上行（模型侧 MCP 工具服务）=====
+# 上游清单**配置化**：增减上游不发版（对接方案 §3）。
+# 默认值即 CCE dev 环境现状（2026-10-22 实测：4 个上游、共 20 个工具）；
+# 生产/测试环境用环境变量覆盖，阶段 3 把公网 EIP 切成 CCE 内网地址时**只改这里**。
+mcp-gateway:
+  # 工具暴露名的前缀分隔符：上游名__工具名（如 hisi-docs-mcp__hisi_docs_search）
+  # ⚠️ 前缀不是装饰：实测 hisi_docs_search 同时存在于 9802 与 9803，没有前缀无法消歧。
+  name-separator: "__"
+  # 单次上游请求超时：连接 5s、读取 60s（上游检索类工具耗时较长）
+  connect-timeout: 5s
+  read-timeout: 60s
+  # 启动时拉取上游工具清单（装载异步，不阻塞启动，避免上游慢导致 Pod 起不来）
+  load-on-startup: true
+  # ===== 阶段 2 入站鉴权 / 吊销 / 限额 =====
+  # 鉴权用 Vert.x 平台 filter（MCP /mcp 不是 JAX-RS，ContainerRequestFilter 拦不到），
+  # 见 McpAuthFilter；限额执行与计量在 ToolRegistry#forward（McpCallGate）。
+  auth:
+    # 生产默认开启；关掉即回到阶段 1 的"内测直连"形态（不解析 token、不计费）。
+    enabled: ${MCP_AUTH_ENABLED:true}
+    # /gateway/refresh 等管理面是否要求 sys_admin 角色
+    admin-guard: true
+    # 吊销/限额存储选型：redis（默认，缺省即 redis）| memory（仅测试）
+    store: ${MCP_AUTH_STORE:redis}
+  quota:
+    # 账号未单独覆盖时的默认日限额（调用次数 / 响应字符数；chars/4 粗估 token）
+    daily-calls: 2000
+    daily-chars: 20000000
+  upstreams:
+    - name: hisi-code-mcp
+      url: ${MCP_UPSTREAM_CODE_URL:http://localhost:9800/mcp}
+    - name: hisi-codegraph
+      url: ${MCP_UPSTREAM_CODEGRAPH_URL:http://localhost:9801/mcp}
+    # 以下两个上游对 hisi_docs_search 同名（实测）：9802 与 9803 都提供该工具。
+    # 主备口径（2026-10-22 确认）：**以 9803（hisi-docs-search）为主，9803 不通自动走 9802**。
+    # priority 只在同名工具分组内比较，数字越小越优先；不重名的工具（9800/9801 全部）不受影响。
+    - name: hisi-docs-mcp
+      url: ${MCP_UPSTREAM_DOCS_URL:http://localhost:9802/mcp}
+      priority: 2
+    - name: hisi-docs-search
+      url: ${MCP_UPSTREAM_SEARCH_URL:http://localhost:9803/mcp}
+      priority: 1
+
+# 阶段 2（鉴权）：平台 JWT 验签用 RSA 公钥。
+# 入站 agent 携带**平台签发的 JWT**，网关侧用 commons-oidc 的 PlatformJwtVerifier
+# 本地 RS256 验签后再信任 sub / roles；**不要**复用 commons-web 的 AuthenticationFilter
+# （它目前只做 Base64 解析、不验签，P0 旧账）。
+rsa:
+  public-key: ${RSA_PUBLIC_KEY:}
+
+# dev profile（quarkusDev 默认激活）：本地调试把上游调用日志打开
+"%dev":
+  quarkus:
+    log:
+      category:
+        "com.hisilicon.knowledge.platform.mcp":
+          level: DEBUG
+
+# test profile（@QuarkusTest 自动激活）：**必须整体替换上游清单**，让测试彻底脱离 dev 网络。
+#
+# ⚠️ 为什么放在主配置里、而不是 test resources 的 application.*：
+#    测试 resources 里的 application.yml / application.properties **都盖不住**本文件的
+#    `mcp-gateway.upstreams` —— 本配置源 ordinal 更高，实测绑定结果仍是上面那 4 个
+#    139.9.104.64 上游（测试会真的去连外网、聚合出真实工具，不可重复且依赖外部服务）。
+#    用 %test 段覆盖同一个键才是可靠的机制；上游指向同进程的 StubUpstreamResource。
+# test profile（@QuarkusTest 自动激活）：**必须把上游清单整体换成同进程 stub**，让测试脱离 dev 网络。
+#
+# ⚠️ 两个实测确认的机制坑，改这里前务必先读（否则测试会"悄悄连真实 dev 上游"）：
+#   1) 测试 resources 里的 application.yml / application.properties **盖不住**本文件的
+#      `mcp-gateway.upstreams`——本配置源 ordinal 更高。所以替换只能写在本 %test 段里。
+#   2) 索引列表是**按索引合并、而非整体替换**：base 段有 4 项（索引 0..3），
+#      若 %test 只给 2 项，则索引 0..1 被替换、索引 2..3（hisi-docs-mcp / hisi-docs-search）
+#      **仍然存活**——实测绑定结果就是 [stub-alpha, stub-beta, hisi-docs-mcp, hisi-docs-search]。
+#      故本段必须**覆盖到 base 的全部 4 个索引**，否则测试依赖外网且结果不可复现。
+#   3) 两个 stub 上游（alpha/beta）足够覆盖聚合语义；索引 2..3 指向同一个 stub 端点，
+#      仅为占满 base 的索引位，避免真实上游复活。
+#   4) stub 的 URL **必须带 root-path**：本应用 root-path=/hisilicon-knowledge-mcp，
+#      JAX-RS 资源实际挂在 /hisilicon-knowledge-mcp/stub/{upstream}；
+#      漏掉前缀会 404，表现为"上游全部 degraded"（实测踩过）。
+"%test":
+  quarkus:
+    http:
+      # 与其它模块的测试端口错开（knowledge 8081 / system 8082 / llm 8084 / core 8087 / iam 8088）
+      test-port: 8089
+    # 探针测试端口（生产 9000 / core 9007 / iam 9008）
+    management:
+      test-port: 9009
+    devservices:
+      enabled: false
+  mcp-gateway:
+    # 测试期不自动装载：由测试显式调用 registry.refresh()，避免启动竞态
+    load-on-startup: false
+    connect-timeout: 2s
+    read-timeout: 5s
+    # 测试默认关鉴权（既有聚合/路由/失败隔离用例不带 token）；
+    # 鉴权语义用例用专门的 QuarkusTestProfile 重新打开（并注入测试 RSA 公钥 + memory store）。
+    auth:
+      enabled: false
+      store: memory
+    upstreams:
+      # priority 语义与生产一致：同名工具分组内数字越小越优先。
+      # 测试场景：beta(1) 是 hisi_docs_search 的主，delta(2)/alpha(3)/gamma(4) 依次为备——
+      # failover 用例把 stub 的 "beta" 路径段禁用（回 500）后，裸名调用应自动落到 alpha。
+      - name: stub-alpha
+        url: http://localhost:8089/hisilicon-knowledge-mcp/stub/alpha
+        priority: 3
+      - name: stub-beta
+        url: http://localhost:8089/hisilicon-knowledge-mcp/stub/beta
+        priority: 1
+      # 以下两项仅用于占满 base 段的索引 2..3（见上文机制说明 2），语义上复用 stub 端点
+      - name: stub-gamma
+        url: http://localhost:8089/hisilicon-knowledge-mcp/stub/alpha
+        priority: 4
+      - name: stub-delta
+        url: http://localhost:8089/hisilicon-knowledge-mcp/stub/beta
+        priority: 2
